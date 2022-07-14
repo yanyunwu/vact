@@ -88,15 +88,15 @@ class HelloWorld extends Vact.Component {
   }
 
   render(h) {
-    let liList = () => this.data.list.value.map(num => h('li', null, num))
+    let liList = () => this.data.list.map(num => h('li', null, num))
 
     return h('div', null,
       [
         h('div', null, [
           h('button', {
-            onClick: () => {
-              this.data.list = [2, 23, 4]
-              this.data.list.value[0] = 4
+            onClick: () => () => {
+              // this.data.list = [2, 23, 4]
+              this.data.list[0] = 4
               console.log(this.data.list);
             }
           }, '111'),
@@ -118,10 +118,6 @@ class Test extends Vact.Component {
       data: {
         time: new Date().toTimeString()
       }
-    })
-
-    this.data.time.on('change', () => {
-      console.log('触发了');
     })
 
     setInterval(() => {
@@ -147,15 +143,15 @@ class App extends Vact.Component {
 
   render(h) {
     return h('div', null, [
-      () => this.data.show ? h(SubComponent, {
-        num: () => this.data.num,
-        setNum: () => (num) => this.data.num = num,
-        test: 9
-      }, []) : '',
-      // h(SubComponent, {
+      // () => this.data.show ? h(SubComponent, {
       //   num: () => this.data.num,
-      //   setNum: () => (num) => this.data.num = num
-      // }, []),
+      //   setNum: () => (num) => this.data.num = num,
+      //   test: 9
+      // }, []) : '',
+      h(SubComponent, {
+        num: () => this.data.num,
+        setNum: () => (num) => this.data.num = num
+      }, []),
       h('button', {
         onClick: () => () => {
           this.data.num++
@@ -165,7 +161,8 @@ class App extends Vact.Component {
         onClick: () => () => {
           this.data.show = !this.data.show
         }
-      }, '隐藏')
+      }, '隐藏'),
+      h(Children, null, [() => this.data.show ? 'h2' : ''])
     ])
   }
 }
@@ -177,7 +174,7 @@ class SubComponent extends Vact.Component {
         color: 'red'
       }
     })
-    this.props = props
+    // this.props = props
     setTimeout(() => {
       this.props.setNum(2)
       console.log('定时器');
@@ -197,6 +194,14 @@ class SubComponent extends Vact.Component {
       style: () => `color: ${this.data.color}`,
       click: () => () => this.data.color = 'blue'
     }, [liList])
+  }
+}
+
+class Children extends Vact.Component {
+  render(h) {
+    return h('h2', null, [
+      () => this.children[0]
+    ])
   }
 }
 

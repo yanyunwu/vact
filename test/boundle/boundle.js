@@ -569,21 +569,28 @@
                               depArr.push(propValue);
                           }
                       }
-                      return Reflect.get(target, prop, receiver);
+                      if (Array.isArray(propValue.value)) {
+                          return propValue.value;
+                      }
+                      else {
+                          return Reflect.get(target, prop, receiver);
+                      }
                   }
               },
               set: (target, prop, value, receiver) => {
                   if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
                       // 当对象被替换为新对象时 通知对象里所有的响应式
                       let valueTarget = this.dataProxyValue.getValueTarget(target[prop]);
+                      let res = Reflect.set(target, prop, value, receiver);
                       this.replaceProps(value, valueTarget);
-                      return Reflect.set(target, prop, value, receiver);
+                      return res;
                   }
                   else {
                       let propValue = this.dataProxyValue.getProp(target, prop);
                       propValue.value = value;
+                      let res = Reflect.set(target, prop, value, receiver);
                       propValue.notify();
-                      return Reflect.set(target, prop, value, receiver);
+                      return res;
                   }
               }
           };
@@ -624,22 +631,28 @@
                               depArr.push(propValue);
                           }
                       }
-                      return Reflect.get(target, prop, receiver);
+                      if (Array.isArray(propValue.value)) {
+                          return propValue.value;
+                      }
+                      else {
+                          return Reflect.get(target, prop, receiver);
+                      }
                   }
               },
               set: (target, prop, value, receiver) => {
                   if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
                       // 当对象被替换为新对象时 通知对象里所有的响应式
                       let valueTarget = this.dataProxyValue.getValueTarget(target[prop]);
+                      let res = Reflect.set(target, prop, value, receiver);
                       this.replaceProps(value, valueTarget);
-                      return Reflect.set(target, prop, value, receiver);
+                      return res;
                   }
                   else {
                       let propValue = this.dataProxyValue.getProp(target, prop);
                       propValue.value = value;
-                      target[prop] = value;
+                      let res = Reflect.set(target, prop, value, receiver);
                       propValue.notify();
-                      return Reflect.set(target, prop, value, receiver);
+                      return res;
                   }
               }
           };
@@ -668,6 +681,12 @@
       // 设置数据为响应式的
       setData() {
           this.data = new DataProxyTest(this.config.data || {}).getData();
+      }
+      setProps(props) {
+          this.props = props;
+      }
+      setChildren(children) {
+          this.children = children;
       }
       renderRoot() {
           return this.render(createNode$1);
@@ -727,7 +746,7 @@
                   });
               }
           }
-          let children = new ArrayProxy(this.children).getData();
+          let children = new ArrayProxy([]).getData();
           if (this.children) {
               for (let i = 0; i < this.children.length; i++) {
                   if (typeof this.children[i] !== 'function') {
@@ -737,12 +756,24 @@
                   let depProps = [];
                   let pool = Vact.depPool;
                   pool.push(depProps);
-                  this.children[i]();
+                  let result = this.children[i]();
                   pool.splice(pool.indexOf(depProps), 1);
+                  if (typeof result === 'function') {
+                      children[i] = result;
+                  }
+                  else {
+                      children[i] = result;
+                      let fn = () => children[i] = this.children[i]();
+                      depProps.forEach(item => {
+                          item.setDep(new Watcher(fn));
+                      });
+                  }
               }
           }
           let Constructor = this.Constructor;
           this.component = new Constructor(props, children);
+          this.component.setProps(props);
+          this.component.setChildren(children);
       }
       getComponent() {
           this.init();

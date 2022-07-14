@@ -17,7 +17,7 @@ abstract class Component {
   config: Config
   abstract data: {}
   abstract props?: {}
-  abstract children?: []
+  abstract children?: any[]
 
   constructor(config: Config = {}) {
     this.config = config
@@ -28,6 +28,14 @@ abstract class Component {
   // 设置数据为响应式的
   setData() {
     this.data = new DataProxyTest(this.config.data || {}).getData()
+  }
+
+  setProps(props: {}) {
+    this.props = props
+  }
+
+  setChildren(children: any[]) {
+    this.children = children
   }
 
   abstract render(h: (a: string | SubConstructor, b?: {}, c?: []) => ElementVNode | ComponentVNode): ElementVNode

@@ -32,6 +32,8 @@ export class TextVNode extends VNode {
 export interface SubComponent {
   new(props: {}, children: []): SubComponent
   renderRoot(): ElementVNode
+  setProps(props: {}): void
+  setChildren(children: any[]): void
 }
 
 /**
@@ -81,7 +83,7 @@ export class ComponentVNode extends VNode {
     }
 
 
-    let children = new ArrayProxy(this.children!).getData()
+    let children = new ArrayProxy([]).getData()
     if (this.children) {
       for (let i = 0; i < this.children.length; i++) {
         if (typeof this.children[i] !== 'function') {
@@ -96,6 +98,18 @@ export class ComponentVNode extends VNode {
         let result = this.children[i]()
         pool.splice(pool.indexOf(depProps), 1)
 
+        if (typeof result === 'function') {
+          children[i] = result
+        } else {
+          children[i] = result
+          let fn = () => children[i] = this.children![i]()
+
+          depProps.forEach(item => {
+            item.setDep(new Watcher(fn))
+          })
+        }
+
+
 
       }
     }
@@ -105,6 +119,8 @@ export class ComponentVNode extends VNode {
 
     let Constructor = this.Constructor
     this.component = new Constructor(props, children)
+    this.component.setProps(props)
+    this.component.setChildren(children)
   }
 
   getComponent(): SubComponent {

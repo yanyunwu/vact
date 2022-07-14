@@ -45,6 +45,7 @@ export class DataProxyValue {
   setValueTarget(target: Record<any, any>, valueTarget: Record<any, any>) {
     this.valueMap.set(target, valueTarget)
   }
+
 }
 
 /**
@@ -140,20 +141,26 @@ export class ArrayProxy {
               depArr.push(propValue)
             }
           }
-          return Reflect.get(target, prop, receiver)
+          if (Array.isArray(propValue.value)) {
+            return propValue.value
+          } else {
+            return Reflect.get(target, prop, receiver)
+          }
         }
       },
       set: (target, prop, value, receiver) => {
         if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
           // 当对象被替换为新对象时 通知对象里所有的响应式
           let valueTarget = this.dataProxyValue.getValueTarget(target[prop])
+          let res = Reflect.set(target, prop, value, receiver)
           this.replaceProps(value, valueTarget)
-          return Reflect.set(target, prop, value, receiver)
+          return res
         } else {
           let propValue = this.dataProxyValue.getProp(target, prop)
           propValue.value = value
+          let res = Reflect.set(target, prop, value, receiver)
           propValue.notify()
-          return Reflect.set(target, prop, value, receiver)
+          return res
         }
 
 
@@ -208,21 +215,26 @@ export class DataProxyTest {
               depArr.push(propValue)
             }
           }
-          return Reflect.get(target, prop, receiver)
+          if (Array.isArray(propValue.value)) {
+            return propValue.value
+          } else {
+            return Reflect.get(target, prop, receiver)
+          }
         }
       },
       set: (target, prop, value, receiver) => {
         if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
           // 当对象被替换为新对象时 通知对象里所有的响应式
           let valueTarget = this.dataProxyValue.getValueTarget(target[prop])
+          let res = Reflect.set(target, prop, value, receiver)
           this.replaceProps(value, valueTarget)
-          return Reflect.set(target, prop, value, receiver)
+          return res
         } else {
           let propValue = this.dataProxyValue.getProp(target, prop)
           propValue.value = value
-          target[prop] = value
+          let res = Reflect.set(target, prop, value, receiver)
           propValue.notify()
-          return Reflect.set(target, prop, value, receiver)
+          return res
         }
 
 
