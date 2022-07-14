@@ -26,4 +26,11 @@ export function createNode(a: string | SubConstructor, b?: {}, c?: []): ElementV
 
 export class Vact {
   static depPool: any[] = []
+  static getDepPool(): any[] {
+    return this.depPool
+  }
+
+  static Component = Component
+  static mount = mount
+  static createNode = createNode
 }

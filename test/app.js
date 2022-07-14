@@ -95,7 +95,7 @@ class HelloWorld extends Vact.Component {
         h('div', null, [
           h('button', {
             onClick: () => () => {
-              // this.data.list = [2, 23, 4]
+              this.data.list = [2, 23, 4]
               this.data.list[0] = 4
               console.log(this.data.list);
             }
@@ -136,18 +136,22 @@ class App extends Vact.Component {
     super({
       data: {
         num: 4,
-        show: true
+        show: true,
+        list: [1, 2, 3]
       }
     })
   }
 
   render(h) {
+    let liList = () => this.data.list.map(num => h('li', null, num))
+
     return h('div', null, [
       // () => this.data.show ? h(SubComponent, {
       //   num: () => this.data.num,
       //   setNum: () => (num) => this.data.num = num,
       //   test: 9
       // }, []) : '',
+
       h(SubComponent, {
         num: () => this.data.num,
         setNum: () => (num) => this.data.num = num
@@ -160,9 +164,10 @@ class App extends Vact.Component {
       h('button', {
         onClick: () => () => {
           this.data.show = !this.data.show
+          this.data.list[0] = 888
         }
       }, '隐藏'),
-      h(Children, null, [() => this.data.show ? 'h2' : ''])
+      h(Children, null, [() => this.data.show ? 'h2' : '444', liList])
     ])
   }
 }
@@ -200,7 +205,10 @@ class SubComponent extends Vact.Component {
 class Children extends Vact.Component {
   render(h) {
     return h('h2', null, [
-      () => this.children[0]
+      () => this.children[0],
+      h('ul', null, [
+        () => this.children[1]
+      ])
     ])
   }
 }

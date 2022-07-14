@@ -8,6 +8,8 @@ import typescript from "rollup-plugin-typescript";
 import dts from "rollup-plugin-dts";
 /** 报错追源 */
 import sourceMaps from "rollup-plugin-sourcemaps";
+/** 压缩打包 */
+import { terser } from 'rollup-plugin-terser';
 const config = {
   input: "index.ts", // 入口文件
   output: [
@@ -21,11 +23,17 @@ const config = {
       format: 'umd',
       name: 'Vact'
     },
-    // {
-    //   file: "lib/bundle.esm.js",
-    //   format: "es",
-    //   sourcemap: true
-    // }
+    {
+      file: "lib/boundle.umd.js",    // 必须
+      format: 'umd',
+      name: 'Vact',
+      sourcemap: true
+    },
+    {
+      file: "lib/bundle.esm.js",
+      format: "es",
+      sourcemap: true
+    }
   ],
 
   plugins: [
@@ -41,6 +49,7 @@ const config = {
       typescript: require("typescript")
     }),
     sourceMaps(),
+    terser()
 
   ]
 

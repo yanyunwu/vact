@@ -1,6 +1,8 @@
-declare class VNode {
+declare abstract class VNode {
+    abstract type: number;
     static ELEMENT: number;
     static TEXT: number;
+    static COMPONENT: number;
 }
 declare class TextVNode extends VNode {
     type: number;
@@ -8,6 +10,25 @@ declare class TextVNode extends VNode {
     textNode?: Text;
     constructor(text: string);
     createTextNode(): Text;
+}
+interface SubComponent {
+    new (props: {}, children: []): SubComponent;
+    renderRoot(): ElementVNode;
+    setProps(props: {}): void;
+    setChildren(children: any[]): void;
+}
+/**
+ * 组件节点
+*/
+declare class ComponentVNode extends VNode {
+    type: number;
+    component?: SubComponent;
+    Constructor: new (props: Record<any, any>, children: any[]) => SubComponent;
+    props?: Record<any, any>;
+    children?: any[];
+    constructor(Constructor: new (props: Record<any, any>, children: any[]) => SubComponent, props?: Record<any, any>, children?: any[]);
+    init(): void;
+    getComponent(): SubComponent;
 }
 declare type BaseElementVNodeChild = string | TextVNode | ElementVNode | Component$1 | Array<any>;
 declare type ElementVNodeChild = BaseElementVNodeChild | (() => BaseElementVNodeChild);
@@ -31,6 +52,17 @@ declare class ElementVNode extends VNode {
     addChild(child: ElementVNodeChild): void;
 }
 
+declare function mount$1(selector: string, rootNode: Component$1): void;
+declare type SubConstructor = new (props: Record<any, any>, children: any[]) => SubComponent;
+declare function createNode$1(a: string | SubConstructor, b?: {}, c?: []): ElementVNode | ComponentVNode;
+declare class Vact {
+    static depPool: any[];
+    static getDepPool(): any[];
+    static Component: typeof Component$1;
+    static mount: typeof mount$1;
+    static createNode: typeof createNode$1;
+}
+
 /**
  * 根组件
 */
@@ -41,18 +73,19 @@ interface Config {
 }
 declare abstract class Component$1 {
     config: Config;
-    data?: {};
+    abstract data: {};
+    abstract props?: {};
+    abstract children?: any[];
     constructor(config?: Config);
-    setProxy(): void;
-    abstract render(h: (tag: string, props: {}, childNodes: []) => TextVNode | ElementVNode): ElementVNode;
+    setData(): void;
+    setProps(props: {}): void;
+    setChildren(children: any[]): void;
+    abstract render(h: (a: string | SubConstructor, b?: {}, c?: []) => ElementVNode | ComponentVNode): ElementVNode;
     renderRoot(): ElementVNode;
 }
-
-declare function mount$1(selector: string, rootNode: Component$1): void;
-declare function createNode$1(a: string, b?: {}, c?: []): ElementVNode;
 
 declare const mount: typeof mount$1;
 declare const Component: typeof Component$1;
 declare const createNode: typeof createNode$1;
 
-export { Component, createNode, mount };
+export { Component, createNode, Vact as default, mount };

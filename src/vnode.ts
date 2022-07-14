@@ -290,6 +290,7 @@ export class ElementVNode extends VNode {
         let fn = () => {
           this.removeChildren(realNodeList)
           let newVnodeList = child()
+
           if (Array.isArray(newVnodeList)) {
             realNodeList = this.getRealNodeList(newVnodeList)
             this.addChildren(realNodeList, pivot)

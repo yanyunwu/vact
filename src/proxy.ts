@@ -24,6 +24,7 @@ export class DataProxyValue {
     let valueTarget = this.valueMap.get(target)
 
     if (!valueTarget[prop]) {
+
       let propValue = new PropValue(Array.isArray(target[prop]) ? new Proxy(target[prop], {
         set(target, prop, value, receiver) {
           // 这里一定要先设置再通知
@@ -141,11 +142,7 @@ export class ArrayProxy {
               depArr.push(propValue)
             }
           }
-          if (Array.isArray(propValue.value)) {
-            return propValue.value
-          } else {
-            return Reflect.get(target, prop, receiver)
-          }
+          return propValue.value
         }
       },
       set: (target, prop, value, receiver) => {
@@ -157,7 +154,17 @@ export class ArrayProxy {
           return res
         } else {
           let propValue = this.dataProxyValue.getProp(target, prop)
-          propValue.value = value
+
+          propValue.value = Array.isArray(value) ? new Proxy(value, {
+            set(target, prop, value, receiver) {
+              // 这里一定要先设置再通知
+              let res = Reflect.set(target, prop, value, receiver)
+              propValue.notify()
+              return res
+            }
+          }) : value
+
+
           let res = Reflect.set(target, prop, value, receiver)
           propValue.notify()
           return res
@@ -201,9 +208,8 @@ export class DataProxyTest {
     // 监控普通对象
     const handler: ProxyHandler<any> = {
       get: (target, prop, receiver) => {
-        if (Array.isArray(target)) {
-          return Reflect.get(target, prop, receiver)
-        } else if (typeof target[prop] === 'object' && target[prop] !== null && !Array.isArray(target[prop])) {
+
+        if (typeof target[prop] === 'object' && target[prop] !== null && !Array.isArray(target[prop])) {
           return new Proxy(target[prop], handler)
         } else if (typeof target[prop] === 'function') {
           return Reflect.get(target, prop, receiver)
@@ -215,11 +221,7 @@ export class DataProxyTest {
               depArr.push(propValue)
             }
           }
-          if (Array.isArray(propValue.value)) {
-            return propValue.value
-          } else {
-            return Reflect.get(target, prop, receiver)
-          }
+          return propValue.value
         }
       },
       set: (target, prop, value, receiver) => {
@@ -231,7 +233,17 @@ export class DataProxyTest {
           return res
         } else {
           let propValue = this.dataProxyValue.getProp(target, prop)
-          propValue.value = value
+
+          propValue.value = Array.isArray(value) ? new Proxy(value, {
+            set(target, prop, value, receiver) {
+              // 这里一定要先设置再通知
+              let res = Reflect.set(target, prop, value, receiver)
+              propValue.notify()
+              return res
+            }
+          }) : value
+
+
           let res = Reflect.set(target, prop, value, receiver)
           propValue.notify()
           return res
