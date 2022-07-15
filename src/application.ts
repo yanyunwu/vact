@@ -1,6 +1,7 @@
-import Component from './component';
-import { PropValue } from './value';
-import { TextVNode, ElementVNode, SubComponent, ComponentVNode } from './vnode'
+import { Component } from './component';
+// import { ElementVNode, SubComponent, ComponentVNode } from './vnode'
+import { ElementVNode, ComponentVNode } from './vnode'
+import { SubComponent } from './vnode/type'
 
 export function mount(selector: string, rootNode: Component) {
   let ele = document.querySelector(selector)

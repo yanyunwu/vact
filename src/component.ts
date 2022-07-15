@@ -1,6 +1,6 @@
-import { SubConstructor, Vact } from "./application";
+import { SubConstructor } from "./application";
 import { createNode } from './application'
-import { ComponentVNode, ElementVNode, TextVNode } from "./vnode";
+import { ComponentVNode, ElementVNode } from "./vnode";
 import { DataProxy } from './proxy'
 
 /**
@@ -13,9 +13,9 @@ interface Config {
   },
 }
 
-abstract class Component {
-  config: Config
-  data?: {}
+export abstract class Component {
+  private config: Config
+  public data?: {}
   props?: {}
   children?: any[]
 
@@ -44,5 +44,3 @@ abstract class Component {
     return this.render(createNode)
   }
 }
-
-export default Component
