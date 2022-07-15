@@ -146,7 +146,7 @@ export class ArrayProxy {
         }
       },
       set: (target, prop, value, receiver) => {
-        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.constructor === Object) {
           // 当对象被替换为新对象时 通知对象里所有的响应式
           let valueTarget = this.dataProxyValue.getValueTarget(target[prop])
           let res = Reflect.set(target, prop, value, receiver)
@@ -163,7 +163,6 @@ export class ArrayProxy {
               return res
             }
           }) : value
-
 
           let res = Reflect.set(target, prop, value, receiver)
           propValue.notify()
@@ -225,7 +224,7 @@ export class DataProxyTest {
         }
       },
       set: (target, prop, value, receiver) => {
-        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.constructor === Object) {
           // 当对象被替换为新对象时 通知对象里所有的响应式
           let valueTarget = this.dataProxyValue.getValueTarget(target[prop])
           let res = Reflect.set(target, prop, value, receiver)

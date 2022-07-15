@@ -213,7 +213,10 @@ class Children extends Vact.Component {
 
 class VIf extends Vact.Component {
   render(h) {
-    return h("div", {}, [() => this.children[0]]);
+    return h("div", {}, [() => {
+      console.log(this.children[0]);
+      return this.children[0]
+    }]);
   }
 }
 

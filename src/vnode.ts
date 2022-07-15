@@ -107,6 +107,7 @@ export class ComponentVNode extends VNode {
           depProps.forEach(item => {
             item.setDep(new Watcher(fn))
           })
+
         }
 
 
