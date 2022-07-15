@@ -240,7 +240,7 @@ class App extends Vact.Component {
   }
 } */
 
-/* class App extends Vact.Component {
+class App extends Vact.Component {
   constructor() {
     super({
       data: {
@@ -258,4 +258,4 @@ class App extends Vact.Component {
   }
 }
 
-Vact.mount('#app', new App()) */
+Vact.mount('#app', new App())
