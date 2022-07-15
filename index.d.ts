@@ -73,9 +73,9 @@ interface Config {
 }
 declare abstract class Component$1 {
     config: Config;
-    abstract data: {};
-    abstract props?: {};
-    abstract children?: any[];
+    data?: {};
+    props?: {};
+    children?: any[];
     constructor(config?: Config);
     setData(): void;
     setProps(props: {}): void;

@@ -205,16 +205,17 @@ class SubComponent extends Vact.Component {
 class Children extends Vact.Component {
   render(h) {
     return h('h2', null, [
-      () => this.children[0]
+      () => this.children[0],
+      () => this.children[1]
     ])
   }
 } */
 
 
-class VIf extends Vact.Component {
+/* class VIf extends Vact.Component {
   render(h) {
     return h("div", {}, [() => {
-      console.log(this.children[0]);
+      // console.log(this.children[0]);
       return this.children[0]
     }]);
   }
@@ -237,5 +238,24 @@ class App extends Vact.Component {
       onClick: () => () => this.data.show = !this.data.show
     }, "变换")]);
   }
+} */
+
+/* class App extends Vact.Component {
+  constructor() {
+    super({
+      data: {
+        color: 'red',
+        className: 'test'
+      }
+    })
+  }
+
+  render(h) {
+    return h('div', {
+      className: () => this.data.className,
+      onClick: () => () => this.data.className = 'blue'
+    }, 'hhh')
+  }
 }
-Vact.mount('#app', new App())
+
+Vact.mount('#app', new App()) */

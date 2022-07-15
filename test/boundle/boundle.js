@@ -514,9 +514,9 @@
    * 数据响应式中心
   */
   /**
-   * 数据存放处
+   * 数据事件存放处
   */
-  class DataProxyValue {
+  class DataEventProxy {
       constructor() {
           this.valueMap = new WeakMap();
       }
@@ -539,81 +539,21 @@
           return valueTarget[prop];
       }
       // 获取用于绑定属性事件的代理对象
-      getValueTarget(target) {
+      getEventProxy(target) {
           return this.valueMap.get(target);
       }
       // 设置用于绑定属性事件的代理对象
-      setValueTarget(target, valueTarget) {
+      setEventProxy(target, valueTarget) {
           this.valueMap.set(target, valueTarget);
       }
   }
   /**
-   * 用于实现对数组监控，只适合定长的数组
+   * 监控数据响应变化处
   */
-  class ArrayProxy {
+  class DataProxy {
       constructor(data) {
-          this.dataProxyValue = new DataProxyValue();
-          // 监控数组对象
-          const handler = {
-              get: (target, prop, receiver) => {
-                  if (typeof target[prop] === 'object' && target[prop] !== null && !Array.isArray(target[prop]) && target[prop].constructor === Object) {
-                      return new Proxy(target[prop], handler);
-                  }
-                  else if (typeof target[prop] === 'function') {
-                      return Reflect.get(target, prop, receiver);
-                  }
-                  else {
-                      let propValue = this.dataProxyValue.getProp(target, prop);
-                      for (let depArr of Vact.depPool) {
-                          if (!depArr.includes(propValue)) {
-                              depArr.push(propValue);
-                          }
-                      }
-                      return propValue.value;
-                  }
-              },
-              set: (target, prop, value, receiver) => {
-                  if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.constructor === Object) {
-                      // 当对象被替换为新对象时 通知对象里所有的响应式
-                      let valueTarget = this.dataProxyValue.getValueTarget(target[prop]);
-                      let res = Reflect.set(target, prop, value, receiver);
-                      this.replaceProps(value, valueTarget);
-                      return res;
-                  }
-                  else {
-                      let propValue = this.dataProxyValue.getProp(target, prop);
-                      propValue.value = Array.isArray(value) ? new Proxy(value, {
-                          set(target, prop, value, receiver) {
-                              // 这里一定要先设置再通知
-                              let res = Reflect.set(target, prop, value, receiver);
-                              propValue.notify();
-                              return res;
-                          }
-                      }) : value;
-                      let res = Reflect.set(target, prop, value, receiver);
-                      propValue.notify();
-                      return res;
-                  }
-              }
-          };
-          this.data = new Proxy(data, handler);
-      }
-      // 当对象属性被新对象替换时
-      replaceProps(target, valueTarget) {
-          for (let prop in valueTarget) {
-              let propValue = valueTarget[prop];
-              propValue.value = target[prop];
-              propValue.notify();
-          }
-          this.dataProxyValue.setValueTarget(target, valueTarget);
-      }
-      getData() {
-          return this.data;
-      }
-  }
-  class DataProxyTest {
-      constructor(data) {
-          this.dataProxyValue = new DataProxyValue();
+          this.target = data;
+          this.dataProxyValue = new DataEventProxy();
           // 监控普通对象
           const handler = {
               get: (target, prop, receiver) => {
@@ -636,7 +576,7 @@
               set: (target, prop, value, receiver) => {
                   if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.constructor === Object) {
                       // 当对象被替换为新对象时 通知对象里所有的响应式
-                      let valueTarget = this.dataProxyValue.getValueTarget(target[prop]);
+                      let valueTarget = this.dataProxyValue.getEventProxy(target[prop]);
                       let res = Reflect.set(target, prop, value, receiver);
                       this.replaceProps(value, valueTarget);
                       return res;
@@ -662,6 +602,12 @@
       getData() {
           return this.data;
       }
+      getTarget() {
+          return this.target;
+      }
+      getEventProxy() {
+          return this.dataProxyValue;
+      }
       // 当对象属性被新对象替换时
       replaceProps(target, valueTarget) {
           for (let prop in valueTarget) {
@@ -669,11 +615,11 @@
               propValue.value = target[prop];
               propValue.notify();
           }
-          this.dataProxyValue.setValueTarget(target, valueTarget);
+          this.dataProxyValue.setEventProxy(target, valueTarget);
       }
   }
 
-  class Component$1 {
+  class Component$2 {
       constructor(config = {}) {
           this.config = config;
           // 设置响应式数据对象
@@ -681,7 +627,7 @@
       }
       // 设置数据为响应式的
       setData() {
-          this.data = new DataProxyTest(this.config.data || {}).getData();
+          this.data = new DataProxy(this.config.data || {}).getData();
       }
       setProps(props) {
           this.props = props;
@@ -724,7 +670,7 @@
       }
       init() {
           // 处理自定义组件的属性
-          let props = new DataProxyTest({}).getData();
+          let props = new DataProxy({}).getData();
           for (let prop in this.props) {
               // 如果属性不为函数则不需要设置响应式
               if (typeof this.props[prop] !== 'function') {
@@ -747,7 +693,7 @@
                   });
               }
           }
-          let children = new ArrayProxy([]).getData();
+          let children = new DataProxy([]).getData();
           if (this.children) {
               for (let i = 0; i < this.children.length; i++) {
                   if (typeof this.children[i] !== 'function') {
@@ -812,6 +758,28 @@
                               this.ele.addEventListener(prop, result.bind(this.ele));
                           }
                       }
+                      else if (prop === 'style' && typeof result === 'object') {
+                          let fn = () => {
+                              var _a;
+                              let styleObj = this.props[prop]();
+                              let styleList = [];
+                              for (let i in styleObj) {
+                                  styleList.push(`${i}:${styleObj[i]};`);
+                              }
+                              (_a = this.ele) === null || _a === void 0 ? void 0 : _a.setAttribute(prop, styleList.join(''));
+                          };
+                          fn();
+                          depProps.forEach(item => {
+                              item.setDep(new Watcher(fn));
+                          });
+                      }
+                      else if (prop === 'className') {
+                          this.ele.className = result;
+                          let fn = () => this.ele.className = this.props[prop]();
+                          depProps.forEach(item => {
+                              item.setDep(new Watcher(fn));
+                          });
+                      }
                       else {
                           (_a = this.ele) === null || _a === void 0 ? void 0 : _a.setAttribute(prop, result);
                           let fn = () => { var _a; return (_a = this.ele) === null || _a === void 0 ? void 0 : _a.setAttribute(prop, this.props[prop]()); };
@@ -821,7 +789,12 @@
                       }
                   }
                   else {
-                      this.ele.setAttribute(prop, this.props[prop]);
+                      if (prop === 'className') {
+                          this.ele.className = this.props[prop];
+                      }
+                      else {
+                          this.ele.setAttribute(prop, this.props[prop]);
+                      }
                   }
               }
           }
@@ -844,7 +817,7 @@
               let vnode = new TextVNode(child);
               realNode = vnode.createTextNode();
           }
-          else if (child instanceof Component$1) {
+          else if (child instanceof Component$2) {
               realNode = child.renderRoot().createEle();
           }
           else if (child instanceof ComponentVNode) {
@@ -896,7 +869,7 @@
               let vnode = new TextVNode(child);
               this.ele.appendChild(vnode.createTextNode());
           } // 如果子组件是自定义组件 这里可以删除
-          else if (child instanceof Component$1) {
+          else if (child instanceof Component$2) {
               this.ele.appendChild(child.renderRoot().createEle());
           }
           else if (child instanceof ComponentVNode) {
@@ -914,7 +887,6 @@
               pool.push(depProps);
               let result = child();
               pool.splice(pool.indexOf(depProps), 1);
-              console.log(result);
               // 对于数组需要特殊处理
               if (Array.isArray(result)) {
                   // 设置数组的锚点
@@ -984,7 +956,7 @@
       onClick: 'click',
   };
 
-  function mount$1(selector, rootNode) {
+  function mount$2(selector, rootNode) {
       let ele = document.querySelector(selector);
       let rootEle = rootNode.renderRoot().createEle();
       if (ele && rootEle) {
@@ -1010,9 +982,58 @@
       }
   }
   Vact.depPool = [];
-  Vact.Component = Component$1;
-  Vact.mount = mount$1;
+  Vact.Component = Component$2;
+  Vact.mount = mount$2;
   Vact.createNode = createNode$1;
+
+  class State {
+      constructor(data, config) {
+          this.dataProxy = new DataProxy(data);
+          this.config = config;
+      }
+      get data() {
+          return this.dataProxy.getData();
+      }
+      // 用于监控数据变化
+      watch(path, fn) {
+          let props = path.split('.');
+          if (!props.length)
+              return;
+          let obj = this.dataProxy.getTarget();
+          let prop = props.shift() || '';
+          while (props.length) {
+              let p = props.shift();
+              if (p) {
+                  obj = obj[prop];
+                  prop = p;
+              }
+          }
+          let events = this.dataProxy.getEventProxy();
+          let propValue = events.getProp(obj, prop);
+          propValue.on('change', fn);
+      }
+  }
+
+  // 获取一个响应式的对象
+  function defineState(data, config) {
+      return new State(data, config);
+  }
+
+  const mount$1 = Vact.mount;
+  const Component$1 = Vact.Component;
+  Vact.createNode;
+
+  const state = defineState({
+      color: 'red'
+  });
+  class App extends Component$1 {
+      render(h) {
+          return h('div', {
+              style: () => ({ color: state.data.color })
+          }, 'hello world!');
+      }
+  }
+  mount$1('#app', new App());
 
   const mount = Vact.mount;
   const Component = Vact.Component;

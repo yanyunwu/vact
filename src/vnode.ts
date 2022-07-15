@@ -1,7 +1,7 @@
 import { Vact } from "./application"
 import Component from "./component"
 import { Watcher, PropValue } from './value'
-import { DataProxy, DataProxyTest, ArrayProxy } from './proxy'
+import { DataProxy } from './proxy'
 
 
 
@@ -57,7 +57,7 @@ export class ComponentVNode extends VNode {
 
   init() {
     // 处理自定义组件的属性
-    let props: Record<any, any> = new DataProxyTest({}).getData()
+    let props: Record<any, any> = new DataProxy({}).getData()
     for (let prop in this.props) {
       // 如果属性不为函数则不需要设置响应式
       if (typeof this.props[prop] !== 'function') {
@@ -82,8 +82,7 @@ export class ComponentVNode extends VNode {
       }
     }
 
-
-    let children = new ArrayProxy([]).getData()
+    let children = new DataProxy<any[]>([]).getData()
     if (this.children) {
       for (let i = 0; i < this.children.length; i++) {
         if (typeof this.children[i] !== 'function') {
@@ -176,6 +175,32 @@ export class ElementVNode extends VNode {
             } else {
               this.ele.addEventListener(prop, result.bind(this.ele))
             }
+          } else if (prop === 'style' && typeof result === 'object') {
+            let fn = () => {
+              let styleObj = this.props![prop]()
+
+              let styleList = []
+              for (let i in styleObj) {
+                styleList.push(`${i}:${styleObj[i]};`)
+              }
+              this.ele?.setAttribute(prop, styleList.join(''))
+            }
+
+            fn()
+
+            depProps.forEach(item => {
+              item.setDep(new Watcher(fn))
+            })
+
+
+          } else if (prop === 'className') {
+
+            this.ele.className = result
+            let fn = () => this.ele!.className = this.props![prop]()
+            depProps.forEach(item => {
+              item.setDep(new Watcher(fn))
+            })
+
           } else {
             this.ele?.setAttribute(prop, result)
             let fn = () => this.ele?.setAttribute(prop, this.props![prop]())
@@ -184,7 +209,11 @@ export class ElementVNode extends VNode {
             })
           }
         } else {
-          this.ele.setAttribute(prop, this.props[prop])
+          if (prop === 'className') {
+            this.ele.className = this.props[prop]
+          } else {
+            this.ele.setAttribute(prop, this.props[prop])
+          }
         }
 
       }
@@ -278,8 +307,6 @@ export class ElementVNode extends VNode {
       pool.push(depProps)
       let result = child()
       pool.splice(pool.indexOf(depProps), 1)
-
-      console.log(result);
 
       // 对于数组需要特殊处理
 

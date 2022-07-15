@@ -1,7 +1,7 @@
 import { SubConstructor, Vact } from "./application";
 import { createNode } from './application'
 import { ComponentVNode, ElementVNode, TextVNode } from "./vnode";
-import { DataProxy, DataProxyTest } from './proxy'
+import { DataProxy } from './proxy'
 
 /**
  * 根组件
@@ -15,9 +15,9 @@ interface Config {
 
 abstract class Component {
   config: Config
-  abstract data: {}
-  abstract props?: {}
-  abstract children?: any[]
+  data?: {}
+  props?: {}
+  children?: any[]
 
   constructor(config: Config = {}) {
     this.config = config
@@ -27,7 +27,7 @@ abstract class Component {
 
   // 设置数据为响应式的
   setData() {
-    this.data = new DataProxyTest(this.config.data || {}).getData()
+    this.data = new DataProxy(this.config.data || {}).getData()
   }
 
   setProps(props: {}) {

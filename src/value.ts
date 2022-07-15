@@ -5,9 +5,9 @@ export class PropValue extends EventEmitter {
   public value: any
   private dep: Array<Watcher>
   // 该值所属数据响应中心
-  dataProxy?: DataProxy
+  dataProxy?: DataProxy<object>
 
-  constructor(value: any, dataProxy?: DataProxy) {
+  constructor(value: any, dataProxy?: DataProxy<object>) {
     super()
     this.value = value
     this.dep = []
