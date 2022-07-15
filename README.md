@@ -1,2 +1,152 @@
 # vact
+
 创世纪前端响应式新框架
+
+
+
+## 前言
+
+正如介绍所说，本框架是模仿加借鉴vue和react，并结合二者的特点开发而来。既包含了vue的响应式，又继承了react的函数式编程，并通过我自己编写的jsx babel插件解析，即可使用。
+
+
+
+## 安装
+
+**yarn**: `yarn add vactapp`
+
+**npm**: `npm i vactapp`
+
+
+
+## 快速使用
+
+```jsx
+import { Component, mount, createNode, defineState } from 'vactapp'
+
+const state = defineState({
+  count: 0,
+  color: 'red'
+})
+
+class App extends Component {
+  render() {
+    return <div>
+      <h1 style={{ color: state.data.color }}>hello world!</h1>
+      <div onClick={() => state.data.color = 'blue'}><button>改变颜色</button></div>
+      <div>
+        <span>计数器</span>
+        <button onClick={() => state.data.count++}>增加</button>
+        {state.data.count}
+        <button onClick={() => state.data.count--}>减少</button>
+      </div>
+    </div>
+  }
+}
+
+mount('#app', new App())
+```
+
+因为是响应式的，所以写起来比react更简单，比vue更灵活
+
+
+
+## 响应式
+
+defineState只是一个定义状态的api
+
+每个组件在初始化会自动生成一个响应式对象
+
+```jsx
+class App extends Component {
+    constructor() {
+        super({
+            data: {
+                name: "小明"
+            }
+        })
+        
+        this.data.name // 此时this.data是响应式 和上面的state.data一样
+    }
+}
+```
+
+
+
+## 配合webpack使用
+
+如果使用创建节点的api去写的话会比较麻烦，所以这边推荐使用jsx语法
+
+**babel插件**：babel-plugin-syntax-jsx      babel-plugin-transform-vact-jsx（翻译vact的babel）
+
+<font color="red">目前babel写的有一点小问题，需要手动引入createNode     `import { createNode } from 'vactapp'`</font>
+
+### webapck配置
+
+```json
+const path = require('path')
+const htmlWebpackPlugin = require('html-webpack-plugin')
+
+module.exports = {
+  // 入口
+  entry: path.join(__dirname, './src/app.jsx'),
+
+  // 出口
+  output: {
+    // 目录
+    path: path.join(__dirname, './dist'),
+    filename: 'bundle.js',
+  },
+  // development` : 开发阶段  (不压缩)
+  // production` :  发布阶段 (压缩)
+  mode: 'development',
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: ["style-loader", "css-loader"]
+      },
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /(node_modules)/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env'],
+            plugins: [
+              "syntax-jsx", // 在这里装上我们的babel插件
+              "transform-vact-jsx"
+            ]
+          }
+        }
+      },
+    ]
+  },
+  plugins: [
+    // 使用插件 指定模板
+    new htmlWebpackPlugin({
+      template: path.join(__dirname, './src/index.html')
+    })
+  ],
+  devServer: {
+    open: true,
+    port: 8080 // 默认打开端口号
+  }
+
+}
+```
+
+
+
+### webpack项目目录
+
+```txt
+- node_modules
+- dist
+- src
+	- index.html
+	- index.jsx
+- package.json
+- webpack.config.js
+```
+
+如果你不会webpack请赶快去学习
