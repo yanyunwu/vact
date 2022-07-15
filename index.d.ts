@@ -84,8 +84,22 @@ declare abstract class Component$1 {
     renderRoot(): ElementVNode;
 }
 
+interface StateConfig {
+    deep?: boolean;
+}
+declare class State<T extends object> {
+    private dataProxy;
+    private config?;
+    constructor(data: T, config?: StateConfig);
+    get data(): T;
+    watch(path: string, fn: (value: any) => void): void;
+}
+
+declare function defineState$1(data: Record<string | number | symbol, any>, config?: StateConfig): State<Record<string | number | symbol, any>>;
+
 declare const mount: typeof mount$1;
 declare const Component: typeof Component$1;
 declare const createNode: typeof createNode$1;
+declare const defineState: typeof defineState$1;
 
-export { Component, createNode, Vact as default, mount };
+export { Component, createNode, Vact as default, defineState, mount };
