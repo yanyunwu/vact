@@ -150,3 +150,39 @@ module.exports = {
 ```
 
 如果你不会webpack请赶快去学习
+
+
+
+## 函数式组件
+
+```jsx
+function Button(props, children) {
+    return <button onClick={props.onClick} >{children[0]}</button>
+}
+
+let Button2 = (props, children) => <button onClick={props.onClick} >{children[0]}</button>
+
+class App extends Component {
+    constructor() {
+        super({
+            data: {
+                count: 0
+            }
+        })
+    }
+    
+    render() {
+        return <div>
+            {this.data.count}
+            <Button onClick={() => this.data.count++} >增加</Button>
+            <Button2 onClick={() => this.data.count++} >增加</Button2>
+        </div>
+    }
+}
+```
+
+你可以使用函数声明组件，返回需要渲染的html，同时属性和子元素会作为参数传入
+
+
+
+**后序：用法和jsx原本语法差不多，但也有很多不同的地方**

@@ -255,13 +255,13 @@ class App extends Vact.Component {
       className: () => this.data.className,
       // onClick: () => () => this.data.className = 'blue'
     }, ['hhh',
-      h(Test, { onClick: () => () => this.data.className = 'blue' }, [])
+      h(Test, { onClick: () => () => this.data.className = 'blue' }, ['哈哈哈1'])
     ])
   }
 }
 
-let Test = (props) => {
-  return Vact.createNode('button', { onClick: () => props.onClick }, '哈哈哈')
+let Test = (props, children) => {
+  return Vact.createNode('button', { onClick: () => props.onClick }, children[0])
 }
 
 Vact.mount('#app', new App())
