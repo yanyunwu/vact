@@ -82,7 +82,7 @@ class App extends Component {
 
 ### webapck配置
 
-```json
+```js
 const path = require('path')
 const htmlWebpackPlugin = require('html-webpack-plugin')
 
