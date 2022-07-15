@@ -1,5 +1,5 @@
 import { Vact } from "./application"
-import Component from "./component"
+import { Component } from "./component"
 import { Watcher, PropValue } from './value'
 import { DataProxy } from './proxy'
 
