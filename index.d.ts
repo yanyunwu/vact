@@ -4,34 +4,16 @@ declare abstract class VNode {
     static TEXT: number;
     static COMPONENT: number;
 }
-declare class TextVNode extends VNode {
-    type: number;
-    text: string;
-    textNode?: Text;
-    constructor(text: string);
-    createTextNode(): Text;
-}
+
+declare type BaseElementVNodeChild = string | TextVNode | ElementVNode | Component$1 | Array<any>;
+declare type ElementVNodeChild = BaseElementVNodeChild | (() => BaseElementVNodeChild);
 interface SubComponent {
     new (props: {}, children: []): SubComponent;
     renderRoot(): ElementVNode;
     setProps(props: {}): void;
     setChildren(children: any[]): void;
 }
-/**
- * 组件节点
-*/
-declare class ComponentVNode extends VNode {
-    type: number;
-    component?: SubComponent;
-    Constructor: new (props: Record<any, any>, children: any[]) => SubComponent;
-    props?: Record<any, any>;
-    children?: any[];
-    constructor(Constructor: new (props: Record<any, any>, children: any[]) => SubComponent, props?: Record<any, any>, children?: any[]);
-    init(): void;
-    getComponent(): SubComponent;
-}
-declare type BaseElementVNodeChild = string | TextVNode | ElementVNode | Component$1 | Array<any>;
-declare type ElementVNodeChild = BaseElementVNodeChild | (() => BaseElementVNodeChild);
+
 declare class ElementVNode extends VNode {
     static nativeEvents: {
         [key: string]: any;
@@ -50,6 +32,33 @@ declare class ElementVNode extends VNode {
     addChildren(children: Array<HTMLElement | Text>, pivot: Text): void;
     removeChildren(children: Array<HTMLElement | Text>): void;
     addChild(child: ElementVNodeChild): void;
+}
+
+/**
+ * 组件节点
+*/
+interface SubComponentConstructor {
+    new (props: Record<any, any>, children: any[]): SubComponent;
+}
+declare type FunComponent = (props: Record<any, any>, children: any[]) => ElementVNodeChild;
+declare type ComponentConstructor = SubComponentConstructor | FunComponent;
+declare class ComponentVNode extends VNode {
+    type: number;
+    component?: SubComponent | ElementVNodeChild;
+    Constructor: ComponentConstructor;
+    props?: Record<any, any>;
+    children?: any[];
+    constructor(Constructor: ComponentConstructor, props?: Record<any, any>, children?: any[]);
+    init(): void;
+    getComponent(): SubComponent | ElementVNodeChild;
+}
+
+declare class TextVNode extends VNode {
+    type: number;
+    text: string;
+    textNode?: Text;
+    constructor(text: string);
+    createTextNode(): Text;
 }
 
 declare function mount$1(selector: string, rootNode: Component$1): void;
@@ -72,7 +81,7 @@ interface Config {
     };
 }
 declare abstract class Component$1 {
-    config: Config;
+    private config;
     data?: {};
     props?: {};
     children?: any[];
@@ -95,11 +104,10 @@ declare class State<T extends object> {
     watch(path: string, fn: (value: any) => void): void;
 }
 
-declare function defineState$1(data: Record<string | number | symbol, any>, config?: StateConfig): State<Record<string | number | symbol, any>>;
+declare function defineState(data: Record<string | number | symbol, any>, config?: StateConfig): State<Record<string | number | symbol, any>>;
 
 declare const mount: typeof mount$1;
 declare const Component: typeof Component$1;
 declare const createNode: typeof createNode$1;
-declare const defineState: typeof defineState$1;
 
 export { Component, createNode, Vact as default, defineState, mount };
