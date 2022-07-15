@@ -78,7 +78,7 @@ class App extends Component {
 
 **babel插件**：babel-plugin-syntax-jsx      babel-plugin-transform-vact-jsx（翻译vact的babel）
 
-<font color="red">目前babel写的有一点小问题，需要手动引入createNode     `import { createNode } from 'vactapp'`</font>
+**目前babel写的有一点小问题，需要手动引入createNode     `import { createNode } from 'vactapp'`**
 
 ### webapck配置
 
@@ -88,7 +88,7 @@ const htmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
   // 入口
-  entry: path.join(__dirname, './src/app.jsx'),
+  entry: path.join(__dirname, './src/index.jsx'),
 
   // 出口
   output: {

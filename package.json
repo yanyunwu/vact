@@ -4,6 +4,8 @@
   "main": "lib/boundle.js",
   "types": "index.d.ts",
   "license": "MIT",
+  "author": "烟云雾沧海",
+  "description": "创世纪前端响应式新框架",
   "scripts": {
     "dev": "rollup -c --watch",
     "test": "ts-node index.ts",
@@ -19,5 +21,11 @@
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript": "^1.0.1",
     "tslib": "^2.4.0"
-  }
+  },
+  "repository": "https://github.com/yanyunwu/vact",
+  "keywords": [
+    "前端框架",
+    "响应式",
+    "响应式前端框架"
+  ]
 }
