@@ -191,7 +191,9 @@ export class ElementVNode extends VNode {
 
     // 处理标签子节点
     if (Array.isArray(this.children) && this.children.length) {
-      for (let child of this.children) this.addChild(child)
+      for (let child of this.children) {
+        this.addChild(child)
+      }
     } else if (this.children !== undefined && this.children !== null) {
       this.addChild(this.children)
     }
@@ -275,6 +277,9 @@ export class ElementVNode extends VNode {
       pool.push(depProps)
       let result = child()
       pool.splice(pool.indexOf(depProps), 1)
+
+      console.log(result);
+
       // 对于数组需要特殊处理
 
       if (Array.isArray(result)) {

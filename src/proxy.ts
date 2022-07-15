@@ -130,7 +130,7 @@ export class ArrayProxy {
     // 监控数组对象
     const handler: ProxyHandler<any> = {
       get: (target, prop, receiver) => {
-        if (typeof target[prop] === 'object' && target[prop] !== null && !Array.isArray(target[prop])) {
+        if (typeof target[prop] === 'object' && target[prop] !== null && !Array.isArray(target[prop]) && target[prop].constructor === Object) {
           return new Proxy(target[prop], handler)
         } else if (typeof target[prop] === 'function') {
           return Reflect.get(target, prop, receiver)
@@ -209,7 +209,7 @@ export class DataProxyTest {
     const handler: ProxyHandler<any> = {
       get: (target, prop, receiver) => {
 
-        if (typeof target[prop] === 'object' && target[prop] !== null && !Array.isArray(target[prop])) {
+        if (typeof target[prop] === 'object' && target[prop] !== null && !Array.isArray(target[prop]) && target[prop].constructor === Object) {
           return new Proxy(target[prop], handler)
         } else if (typeof target[prop] === 'function') {
           return Reflect.get(target, prop, receiver)

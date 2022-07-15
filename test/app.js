@@ -131,7 +131,7 @@ class Test extends Vact.Component {
 } */
 
 
-class App extends Vact.Component {
+/* class App extends Vact.Component {
   constructor() {
     super({
       data: {
@@ -152,7 +152,7 @@ class App extends Vact.Component {
       //   test: 9
       // }, []) : '',
 
-      h(SubComponent, {
+      () => h(SubComponent, {
         num: () => this.data.num,
         setNum: () => (num) => this.data.num = num
       }, []),
@@ -205,12 +205,34 @@ class SubComponent extends Vact.Component {
 class Children extends Vact.Component {
   render(h) {
     return h('h2', null, [
-      () => this.children[0],
-      h('ul', null, [
-        () => this.children[1]
-      ])
+      () => this.children[0]
     ])
+  }
+} */
+
+
+class VIf extends Vact.Component {
+  render(h) {
+    return h("div", {}, [() => this.children[0]]);
   }
 }
 
+class App extends Vact.Component {
+  constructor() {
+    super({
+      data: {
+        show: true
+      }
+    });
+  }
+
+  render(h) {
+    return h("div", {}, [h(VIf, {
+      ifs: () => this.data.show
+    }, [() => this.data.show ? h("span", {}, "哈哈哈") : '']),
+    h("button", {
+      onClick: () => () => this.data.show = !this.data.show
+    }, "变换")]);
+  }
+}
 Vact.mount('#app', new App())
