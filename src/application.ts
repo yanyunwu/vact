@@ -4,9 +4,16 @@ import { PropValue } from './value';
 import { ElementVNode, ComponentVNode } from './vnode'
 import { SubComponent } from './vnode/type'
 
-export function mount(selector: string, rootNode: Component) {
+export function mount(selector: string, rootNode: Component | ComponentVNode) {
   let ele = document.querySelector(selector)
-  let rootEle = rootNode.renderRoot().createEle()
+  let rootEle: HTMLElement | null = null
+  if (rootNode instanceof Component) {
+    rootEle = rootNode.renderRoot().createEle()
+  } else {
+    let component = rootNode.getComponent()
+    if (component instanceof Component) rootEle = component.renderRoot().createEle()
+    else if (component instanceof ElementVNode) rootEle = component.createEle()
+  }
   if (ele && rootEle) {
     if (ele.parentNode) {
       ele.parentNode.replaceChild(rootEle, ele)

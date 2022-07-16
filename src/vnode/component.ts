@@ -27,7 +27,15 @@ export class ComponentVNode extends VNode {
     super()
     this.Constructor = Constructor
     this.props = props || {}
-    this.children = children || []
+    if (Array.isArray(children)) {
+      this.children = children
+    } else {
+      if (children !== undefined && children !== null) {
+        this.children = [children]
+      } else {
+        this.children = []
+      }
+    }
 
     // 在初始化内部一定不要调用init
   }

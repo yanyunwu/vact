@@ -655,7 +655,17 @@
           this.type = VNode.COMPONENT;
           this.Constructor = Constructor;
           this.props = props || {};
-          this.children = children || [];
+          if (Array.isArray(children)) {
+              this.children = children;
+          }
+          else {
+              if (children !== undefined && children !== null) {
+                  this.children = [children];
+              }
+              else {
+                  this.children = [];
+              }
+          }
           // 在初始化内部一定不要调用init
       }
       init() {
@@ -933,7 +943,17 @@
 
   function mount$1(selector, rootNode) {
       let ele = document.querySelector(selector);
-      let rootEle = rootNode.renderRoot().createEle();
+      let rootEle = null;
+      if (rootNode instanceof Component$1) {
+          rootEle = rootNode.renderRoot().createEle();
+      }
+      else {
+          let component = rootNode.getComponent();
+          if (component instanceof Component$1)
+              rootEle = component.renderRoot().createEle();
+          else if (component instanceof ElementVNode)
+              rootEle = component.createEle();
+      }
       if (ele && rootEle) {
           if (ele.parentNode) {
               ele.parentNode.replaceChild(rootEle, ele);

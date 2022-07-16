@@ -1,7 +1,7 @@
 
 
 
-class App extends Vact.Component {
+/* class App extends Vact.Component {
   constructor(props, children) {
     super({
       data: {
@@ -72,7 +72,7 @@ class HelloWorld extends Vact.Component {
       ]
     )
   }
-}
+} */
 
 /* class App extends Vact.Component {
   constructor() {
@@ -265,7 +265,7 @@ let Test = (props, children) => {
   return Vact.createNode('button', { onClick: () => props.onClick }, children[0])
 } */
 
-/* class App extends Vact.Component {
+class App extends Vact.Component {
   constructor() {
     super({
       data: {
@@ -284,8 +284,8 @@ let Test = (props, children) => {
 
 class Test extends Vact.Component {
   render(h) {
-    return h('button', null, this.children)
+    return h('button', null, this.children[0])
   }
-} */
+}
 
-Vact.mount('#app', new App())
+Vact.mount('#app', Vact.h(App))
