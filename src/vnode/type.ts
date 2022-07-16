@@ -1,8 +1,10 @@
+import { type } from "os"
 import { Component } from "../component"
-import { TextVNode, ElementVNode } from "../vnode"
+import { TextVNode, ElementVNode, ComponentVNode } from "../vnode"
 
-export type BaseElementVNodeChild = string | TextVNode | ElementVNode | Component | Array<any>
-export type ElementVNodeChild = BaseElementVNodeChild | (() => BaseElementVNodeChild)
+export type ChildVNode = ElementVNode | TextVNode | ComponentVNode
+export type BaseChildVNode = string | ElementVNode | Component | ComponentVNode | Array<string | ElementVNode | Component | ComponentVNode>
+export type RBaseChildVNode = BaseChildVNode | (() => BaseChildVNode)
 
 export interface SubComponent {
   new(props: {}, children: []): SubComponent

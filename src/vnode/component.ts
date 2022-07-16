@@ -1,9 +1,9 @@
 import { Component } from "../component"
-import { Vact } from "../application"
+import { getDepProps } from "../application"
 import { DataProxy } from "../proxy"
-import { PropValue, Watcher } from "../value"
+import { Watcher } from "../value"
 import { VNode } from "./baseNode"
-import { ElementVNodeChild, SubComponent } from "./type"
+import { RBaseChildVNode, SubComponent } from "./type"
 import { ElementVNode } from "./element"
 
 
@@ -14,12 +14,12 @@ import { ElementVNode } from "./element"
 interface SubComponentConstructor {
   new(props: Record<any, any>, children: any[]): SubComponent
 }
-type FunComponent = (props: Record<any, any>, children: any[]) => ElementVNodeChild
+type FunComponent = (props: Record<any, any>, children: any[]) => RBaseChildVNode
 type ComponentConstructor = SubComponentConstructor | FunComponent
 
 export class ComponentVNode extends VNode {
   type: number = VNode.COMPONENT
-  component?: SubComponent | ElementVNodeChild
+  component?: SubComponent | RBaseChildVNode
   Constructor: ComponentConstructor
   props?: Record<any, any>
   children?: any[]
@@ -42,11 +42,7 @@ export class ComponentVNode extends VNode {
         continue
       }
 
-      let depProps: PropValue[] = []
-      let pool = Vact.depPool
-      pool.push(depProps)
-      let result = this.props[prop]()
-      pool.splice(pool.indexOf(depProps), 1)
+      let [depProps, result] = getDepProps(this.props[prop])
 
       if (typeof result === 'function') {
         props[prop] = result
@@ -67,12 +63,7 @@ export class ComponentVNode extends VNode {
           continue
         }
 
-
-        let depProps: PropValue[] = []
-        let pool = Vact.depPool
-        pool.push(depProps)
-        let result = this.children[i]()
-        pool.splice(pool.indexOf(depProps), 1)
+        let [depProps, result] = getDepProps(this.children[i])
 
         if (typeof result === 'function') {
           children[i] = result
@@ -106,7 +97,7 @@ export class ComponentVNode extends VNode {
 
   }
 
-  getComponent(): SubComponent | ElementVNodeChild {
+  getComponent(): SubComponent | RBaseChildVNode {
     this.init()
     return this.component!
   }
