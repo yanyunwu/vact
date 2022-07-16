@@ -1,10 +1,10 @@
+import { Component } from './src/component'
+import { defineState, mount, createNode } from './src/utils'
 import { Vact } from './src/application'
-import { defineState } from './src/utils'
 
-export const mount = Vact.mount
-export const Component = Vact.Component
-export const createNode = Vact.createNode
-export { defineState }
+Vact.Component = Component
+
+export { mount, Component, defineState, createNode }
 export const h = createNode
 export default Vact
 

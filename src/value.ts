@@ -1,5 +1,7 @@
 import { EventEmitter } from "events"
 import { DataProxy } from "./proxy"
+import { runTask } from './application'
+
 
 export class PropValue extends EventEmitter {
   public value: any
@@ -47,12 +49,19 @@ export class PropValue extends EventEmitter {
 
 export class Watcher {
   fn: () => void
+  running: boolean = false
 
   constructor(fn: () => void) {
     this.fn = fn
   }
 
   update() {
-    this.fn()
+    if (this.running) return
+    this.running = true
+    let fn = () => {
+      this.fn()
+      this.running = false
+    }
+    runTask(fn)
   }
 }

@@ -1,4 +1,4 @@
-import { Vact } from "./application";
+import { getDepPool } from "./application";
 import { PropValue } from "./value";
 
 /**
@@ -70,7 +70,7 @@ export class DataProxy<T extends object> {
         }
         else {
           let propValue = this.dataProxyValue.getProp(target, prop)
-          for (let depArr of Vact.depPool) {
+          for (let depArr of getDepPool()) {
             if (!depArr.includes(propValue)) {
               depArr.push(propValue)
             }

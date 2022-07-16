@@ -265,6 +265,10 @@ let Test = (props, children) => {
   return Vact.createNode('button', { onClick: () => props.onClick }, children[0])
 } */
 
+let Test = (props, children) => {
+  return Vact.createNode('button', null, children[0])
+}
+
 class App extends Vact.Component {
   constructor() {
     super({
@@ -277,15 +281,12 @@ class App extends Vact.Component {
 
   render(h) {
     return h('div', null, ['hhhh', h('button', { click: () => () => this.data.show = !this.data.show }, '按钮'),
-      () => this.data.show ? h(Test, null, "ggg") : ''
+      () => this.data.show ? h(Test, null, "ggg1") : ''
     ])
   }
 }
 
-class Test extends Vact.Component {
-  render(h) {
-    return h('button', null, this.children[0])
-  }
-}
+
+
 
 Vact.mount('#app', Vact.h(App))

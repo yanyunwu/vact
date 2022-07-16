@@ -1,5 +1,4 @@
 
-
 export abstract class VNode {
   abstract type: number
   static ELEMENT: number = 0

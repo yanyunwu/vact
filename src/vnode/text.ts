@@ -1,6 +1,5 @@
 import { VNode } from "./baseNode"
 
-
 export class TextVNode extends VNode {
   type: number = VNode.TEXT
   text: string

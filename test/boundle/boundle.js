@@ -1,1 +1,1069 @@
-!function(e,t){e&&!e.getElementById("livereloadscript")&&((t=e.createElement("script")).async=1,t.src="//"+(self.location.host||"localhost").split(":")[0]+":35729/livereload.js?snipver=1",t.id="livereloadscript",e.getElementsByTagName("head")[0].appendChild(t))}(self.document),function(e,t){"object"==typeof exports&&"undefined"!=typeof module?t(exports):"function"==typeof define&&define.amd?define(["exports"],t):t((e="undefined"!=typeof globalThis?globalThis:e||self).Vact={})}(this,(function(e){"use strict";function t(){}function n(){n.init.call(this)}function r(e){return void 0===e._maxListeners?n.defaultMaxListeners:e._maxListeners}function i(e,t,n){if(t)e.call(n);else for(var r=e.length,i=f(e,r),s=0;s<r;++s)i[s].call(n)}function s(e,t,n,r){if(t)e.call(n,r);else for(var i=e.length,s=f(e,i),o=0;o<i;++o)s[o].call(n,r)}function o(e,t,n,r,i){if(t)e.call(n,r,i);else for(var s=e.length,o=f(e,s),l=0;l<s;++l)o[l].call(n,r,i)}function l(e,t,n,r,i,s){if(t)e.call(n,r,i,s);else for(var o=e.length,l=f(e,o),a=0;a<o;++a)l[a].call(n,r,i,s)}function a(e,t,n,r){if(t)e.apply(n,r);else for(var i=e.length,s=f(e,i),o=0;o<i;++o)s[o].apply(n,r)}function h(e,n,i,s){var o,l,a,h;if("function"!=typeof i)throw new TypeError('"listener" argument must be a function');if((l=e._events)?(l.newListener&&(e.emit("newListener",n,i.listener?i.listener:i),l=e._events),a=l[n]):(l=e._events=new t,e._eventsCount=0),a){if("function"==typeof a?a=l[n]=s?[i,a]:[a,i]:s?a.unshift(i):a.push(i),!a.warned&&(o=r(e))&&o>0&&a.length>o){a.warned=!0;var c=new Error("Possible EventEmitter memory leak detected. "+a.length+" "+n+" listeners added. Use emitter.setMaxListeners() to increase limit");c.name="MaxListenersExceededWarning",c.emitter=e,c.type=n,c.count=a.length,h=c,"function"==typeof console.warn?console.warn(h):console.log(h)}}else a=l[n]=i,++e._eventsCount;return e}function c(e,t,n){var r=!1;function i(){e.removeListener(t,i),r||(r=!0,n.apply(e,arguments))}return i.listener=n,i}function u(e){var t=this._events;if(t){var n=t[e];if("function"==typeof n)return 1;if(n)return n.length}return 0}function f(e,t){for(var n=new Array(t);t--;)n[t]=e[t];return n}t.prototype=Object.create(null),n.EventEmitter=n,n.usingDomains=!1,n.prototype.domain=void 0,n.prototype._events=void 0,n.prototype._maxListeners=void 0,n.defaultMaxListeners=10,n.init=function(){this.domain=null,n.usingDomains&&undefined.active,this._events&&this._events!==Object.getPrototypeOf(this)._events||(this._events=new t,this._eventsCount=0),this._maxListeners=this._maxListeners||void 0},n.prototype.setMaxListeners=function(e){if("number"!=typeof e||e<0||isNaN(e))throw new TypeError('"n" argument must be a positive number');return this._maxListeners=e,this},n.prototype.getMaxListeners=function(){return r(this)},n.prototype.emit=function(e){var t,n,r,h,c,u,f,p="error"===e;if(u=this._events)p=p&&null==u.error;else if(!p)return!1;if(f=this.domain,p){if(t=arguments[1],!f){if(t instanceof Error)throw t;var d=new Error('Uncaught, unspecified "error" event. ('+t+")");throw d.context=t,d}return t||(t=new Error('Uncaught, unspecified "error" event')),t.domainEmitter=this,t.domain=f,t.domainThrown=!1,f.emit("error",t),!1}if(!(n=u[e]))return!1;var y="function"==typeof n;switch(r=arguments.length){case 1:i(n,y,this);break;case 2:s(n,y,this,arguments[1]);break;case 3:o(n,y,this,arguments[1],arguments[2]);break;case 4:l(n,y,this,arguments[1],arguments[2],arguments[3]);break;default:for(h=new Array(r-1),c=1;c<r;c++)h[c-1]=arguments[c];a(n,y,this,h)}return!0},n.prototype.addListener=function(e,t){return h(this,e,t,!1)},n.prototype.on=n.prototype.addListener,n.prototype.prependListener=function(e,t){return h(this,e,t,!0)},n.prototype.once=function(e,t){if("function"!=typeof t)throw new TypeError('"listener" argument must be a function');return this.on(e,c(this,e,t)),this},n.prototype.prependOnceListener=function(e,t){if("function"!=typeof t)throw new TypeError('"listener" argument must be a function');return this.prependListener(e,c(this,e,t)),this},n.prototype.removeListener=function(e,n){var r,i,s,o,l;if("function"!=typeof n)throw new TypeError('"listener" argument must be a function');if(!(i=this._events))return this;if(!(r=i[e]))return this;if(r===n||r.listener&&r.listener===n)0==--this._eventsCount?this._events=new t:(delete i[e],i.removeListener&&this.emit("removeListener",e,r.listener||n));else if("function"!=typeof r){for(s=-1,o=r.length;o-- >0;)if(r[o]===n||r[o].listener&&r[o].listener===n){l=r[o].listener,s=o;break}if(s<0)return this;if(1===r.length){if(r[0]=void 0,0==--this._eventsCount)return this._events=new t,this;delete i[e]}else!function(e,t){for(var n=t,r=n+1,i=e.length;r<i;n+=1,r+=1)e[n]=e[r];e.pop()}(r,s);i.removeListener&&this.emit("removeListener",e,l||n)}return this},n.prototype.removeAllListeners=function(e){var n,r;if(!(r=this._events))return this;if(!r.removeListener)return 0===arguments.length?(this._events=new t,this._eventsCount=0):r[e]&&(0==--this._eventsCount?this._events=new t:delete r[e]),this;if(0===arguments.length){for(var i,s=Object.keys(r),o=0;o<s.length;++o)"removeListener"!==(i=s[o])&&this.removeAllListeners(i);return this.removeAllListeners("removeListener"),this._events=new t,this._eventsCount=0,this}if("function"==typeof(n=r[e]))this.removeListener(e,n);else if(n)do{this.removeListener(e,n[n.length-1])}while(n[0]);return this},n.prototype.listeners=function(e){var t,n=this._events;return n&&(t=n[e])?"function"==typeof t?[t.listener||t]:function(e){for(var t=new Array(e.length),n=0;n<t.length;++n)t[n]=e[n].listener||e[n];return t}(t):[]},n.listenerCount=function(e,t){return"function"==typeof e.listenerCount?e.listenerCount(t):u.call(e,t)},n.prototype.listenerCount=u,n.prototype.eventNames=function(){return this._eventsCount>0?Reflect.ownKeys(this._events):[]};class p extends n{constructor(e,t){super(),this.value=e,this.dep=[],this.dataProxy=t}setDep(e){this.dep.push(e)}valueOf(){return this.value}toString(){return this.value}set(e){this.value=e}get(){return this.value}notify(){this.dep.forEach((e=>{e.update()})),this.emit("change",this.value)}}class d{constructor(e){this.fn=e}update(){this.fn()}}class y{constructor(){this.valueMap=new WeakMap}getProp(e,t){this.valueMap.get(e)||this.valueMap.set(e,{});let n=this.valueMap.get(e);if(!n[t]){let r=new p(Array.isArray(e[t])?new Proxy(e[t],{set(e,t,n,i){let s=Reflect.set(e,t,n,i);return r.notify(),s}}):e[t]);n[t]=r}return n[t]}getEventProxy(e){return this.valueMap.get(e)}setEventProxy(e,t){this.valueMap.set(e,t)}}class v{constructor(e){this.target=e,this.dataProxyValue=new y;const t={get:(e,n,r)=>{if("object"!=typeof e[n]||null===e[n]||Array.isArray(e[n])||e[n].constructor!==Object){if("function"==typeof e[n])return Reflect.get(e,n,r);{let t=this.dataProxyValue.getProp(e,n);for(let e of V.depPool)e.includes(t)||e.push(t);return t.value}}return new Proxy(e[n],t)},set:(e,t,n,r)=>{if("object"!=typeof n||null===n||Array.isArray(n)||n.constructor!==Object){let i=this.dataProxyValue.getProp(e,t);i.value=Array.isArray(n)?new Proxy(n,{set(e,t,n,r){let s=Reflect.set(e,t,n,r);return i.notify(),s}}):n;let s=Reflect.set(e,t,n,r);return i.notify(),s}{let i=this.dataProxyValue.getEventProxy(e[t]),s=Reflect.set(e,t,n,r);return this.replaceProps(n,i),s}}};this.data=new Proxy(e,t)}getData(){return this.data}getTarget(){return this.target}getEventProxy(){return this.dataProxyValue}replaceProps(e,t){for(let n in t){let r=t[n];r.value=e[n],r.notify()}this.dataProxyValue.setEventProxy(e,t)}}class g{constructor(e={}){this.config=e,this.setData()}setData(){this.data=new v(this.config.data||{}).getData()}setProps(e){this.props=e}setChildren(e){this.children=e}renderRoot(){return this.elementVNode=this.render(N)}getElementVNode(){return this.elementVNode}}class m{}m.ELEMENT=0,m.TEXT=1,m.COMPONENT=2;class w extends m{constructor(e,t,n){super(),this.type=m.COMPONENT,this.Constructor=e,this.props=t||{},Array.isArray(n)?this.children=n:this.children=null!=n?[n]:[]}init(){let e=new v({}).getData();for(let t in this.props){if("function"!=typeof this.props[t]){e[t]=this.props[t];continue}let[n,r]=R(this.props[t]);if("function"==typeof r)e[t]=r;else{e[t]=r;let i=()=>e[t]=this.props[t]();n.forEach((e=>{e.setDep(new d(i))}))}}let t=new v([]).getData();if(this.children)for(let e=0;e<this.children.length;e++){if("function"!=typeof this.children[e]){t[e]=this.children[e];continue}let[n,r]=R(this.children[e]);if("function"==typeof r)t[e]=r;else{t[e]=r;let i=()=>t[e]=this.children[e]();n.forEach((e=>{e.setDep(new d(i))}))}}let n=this.Constructor;n.prototype?this.component=new n(e,t):this.component=n(e,t),this.component instanceof g&&(this.component.setProps(e),this.component.setChildren(t))}getComponent(){return this.init(),this.component}getRVnode(){if(this.component instanceof g)return this.component.getElementVNode().getRVnode();if(this.component instanceof x)return this.component.getRVnode();throw new Error("组件初始化")}}class E extends m{constructor(e){super(),this.type=m.TEXT,this.text=e}createTextNode(){return this.textNode=document.createTextNode(this.text),this.textNode}getRVnode(){return this.textNode}}class x extends m{constructor(e,t,n){super(),this.type=m.ELEMENT,this.tag=e,this.props=t,this.children=n}getRVnode(){return this.ele}createEle(){return this.ele=document.createElement(this.tag),this.setProps(),this.setChildren(),this.ele}setProps(){if(this.props&&this.ele)for(let e in this.props){if("function"!=typeof this.props[e]){P(this.ele,e,this.props[e]);continue}let[t,n]=R(this.props[e]);if(P(this.ele,e,n),"function"==typeof n)continue;let r=()=>P(this.ele,e,this.props[e]());t.forEach((e=>e.setDep(new d(r))))}}setChildren(){if(this.ele&&void 0!==this.children&&null!==this.children){Array.isArray(this.children)||(this.children=[this.children]);for(let e of this.children){if("function"!=typeof e){L(this.ele,_(e));continue}let[t,n]=R(e);if(Array.isArray(n)){let r=C("");L(this.ele,r);let i=_(n);A(this.ele,i,r);let s=()=>{i.forEach((e=>e.getRVnode().remove()));let t=e();Array.isArray(t)&&(i=_(t),A(this.ele,i,r))};t.forEach((e=>e.setDep(new d(s))))}else{let r=C(n);L(this.ele,r);let i=()=>{let t=e();r=b(this.ele,C(t),r)};t.forEach((e=>e.setDep(new d(i))))}}}}}function P(e,t,n){if("string"==typeof n)"className"===t?e.className=n:e.setAttribute(t,n);else if("style"===t&&"object"==typeof n&&null!==n){let r=[];for(let e in n)r.push(`${e}:${n[e]};`);e.setAttribute(t,r.join(""))}else if("function"==typeof n){let r=/^on([a-zA-Z]+)/;if(r.test(t)){let i=t.match(r);i&&e.addEventListener(i[1].toLocaleLowerCase(),n.bind(e))}else e.addEventListener(t,n.bind(e))}}function L(e,t){Array.isArray(t)?t.forEach((t=>e.appendChild(t.getRVnode()))):e.appendChild(t.getRVnode())}function C(e){if("string"==typeof e){let t=new E(e);return t.createTextNode(),t}if(e instanceof w){e.getComponent();let t=e.getComponent();return t instanceof g?t.renderRoot().createEle():t instanceof x&&t.createEle(),e}if(e instanceof x)return e.createEle(),e;{null===e&&(e="");let t=new E(String(e));return t.createTextNode(),t}}function _(e){return Array.isArray(e)?e.map((e=>C(e))):C(e)}function b(e,t,n){return t instanceof E&&n instanceof E?(n.getRVnode().nodeValue=t.getRVnode().nodeValue,n):(e.replaceChild(t.getRVnode(),n.getRVnode()),t)}function A(e,t,n){let r=document.createDocumentFragment();t.forEach((e=>r.appendChild(e.getRVnode()))),n?e.insertBefore(r,n.getRVnode()):e.appendChild(r)}function N(e,t,n){if("string"==typeof e)return new x(e,t,n);if("function"==typeof e)return new w(e,t,n);throw new Error("只能传入字符串或者构造函数")}class V{static getDepPool(){return this.depPool}}function R(e){let t=[],n=V.depPool;n.push(t);let r=e();return n.splice(n.indexOf(t),1),[t,r]}V.depPool=[],V.Component=g,V.mount=function(e,t){let n=document.querySelector(e),r=null;if(t instanceof g)r=t.renderRoot().createEle();else{let e=t.getComponent();e instanceof g?r=e.renderRoot().createEle():e instanceof x&&(r=e.createEle())}n&&r&&n.parentNode&&n.parentNode.replaceChild(r,n)},V.createNode=N;class T{constructor(e,t){this.dataProxy=new v(e),this.config=t}get data(){return this.dataProxy.getData()}watch(e,t){let n=e.split(".");if(!n.length)return;let r=this.dataProxy.getTarget(),i=n.shift()||"";for(;n.length;){let e=n.shift();e&&(r=r[i],i=e)}this.dataProxy.getEventProxy().getProp(r,i).on("change",t)}}const M=V.mount,D=V.Component,O=V.createNode,j=O;e.Component=D,e.createNode=O,e.default=V,e.defineState=function(e,t){return new T(e,t)},e.h=j,e.mount=M,Object.defineProperty(e,"__esModule",{value:!0})}));
+
+(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
+(function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Vact = {}));
+})(this, (function (exports) { 'use strict';
+
+  class State {
+      constructor(data, config) {
+          this.dataProxy = new DataProxy(data);
+          this.config = config;
+      }
+      get data() {
+          return this.dataProxy.getData();
+      }
+      // 用于监控数据变化
+      watch(path, fn) {
+          let props = path.split('.');
+          if (!props.length)
+              return;
+          let obj = this.dataProxy.getTarget();
+          let prop = props.shift() || '';
+          while (props.length) {
+              let p = props.shift();
+              if (p) {
+                  obj = obj[prop];
+                  prop = p;
+              }
+          }
+          let events = this.dataProxy.getEventProxy();
+          let propValue = events.getProp(obj, prop);
+          propValue.on('change', fn);
+      }
+  }
+
+  var domain;
+
+  // This constructor is used to store event handlers. Instantiating this is
+  // faster than explicitly calling `Object.create(null)` to get a "clean" empty
+  // object (tested with v8 v4.9).
+  function EventHandlers() {}
+  EventHandlers.prototype = Object.create(null);
+
+  function EventEmitter() {
+    EventEmitter.init.call(this);
+  }
+
+  // nodejs oddity
+  // require('events') === require('events').EventEmitter
+  EventEmitter.EventEmitter = EventEmitter;
+
+  EventEmitter.usingDomains = false;
+
+  EventEmitter.prototype.domain = undefined;
+  EventEmitter.prototype._events = undefined;
+  EventEmitter.prototype._maxListeners = undefined;
+
+  // By default EventEmitters will print a warning if more than 10 listeners are
+  // added to it. This is a useful default which helps finding memory leaks.
+  EventEmitter.defaultMaxListeners = 10;
+
+  EventEmitter.init = function() {
+    this.domain = null;
+    if (EventEmitter.usingDomains) {
+      // if there is an active domain, then attach to it.
+      if (domain.active ) ;
+    }
+
+    if (!this._events || this._events === Object.getPrototypeOf(this)._events) {
+      this._events = new EventHandlers();
+      this._eventsCount = 0;
+    }
+
+    this._maxListeners = this._maxListeners || undefined;
+  };
+
+  // Obviously not all Emitters should be limited to 10. This function allows
+  // that to be increased. Set to zero for unlimited.
+  EventEmitter.prototype.setMaxListeners = function setMaxListeners(n) {
+    if (typeof n !== 'number' || n < 0 || isNaN(n))
+      throw new TypeError('"n" argument must be a positive number');
+    this._maxListeners = n;
+    return this;
+  };
+
+  function $getMaxListeners(that) {
+    if (that._maxListeners === undefined)
+      return EventEmitter.defaultMaxListeners;
+    return that._maxListeners;
+  }
+
+  EventEmitter.prototype.getMaxListeners = function getMaxListeners() {
+    return $getMaxListeners(this);
+  };
+
+  // These standalone emit* functions are used to optimize calling of event
+  // handlers for fast cases because emit() itself often has a variable number of
+  // arguments and can be deoptimized because of that. These functions always have
+  // the same number of arguments and thus do not get deoptimized, so the code
+  // inside them can execute faster.
+  function emitNone(handler, isFn, self) {
+    if (isFn)
+      handler.call(self);
+    else {
+      var len = handler.length;
+      var listeners = arrayClone(handler, len);
+      for (var i = 0; i < len; ++i)
+        listeners[i].call(self);
+    }
+  }
+  function emitOne(handler, isFn, self, arg1) {
+    if (isFn)
+      handler.call(self, arg1);
+    else {
+      var len = handler.length;
+      var listeners = arrayClone(handler, len);
+      for (var i = 0; i < len; ++i)
+        listeners[i].call(self, arg1);
+    }
+  }
+  function emitTwo(handler, isFn, self, arg1, arg2) {
+    if (isFn)
+      handler.call(self, arg1, arg2);
+    else {
+      var len = handler.length;
+      var listeners = arrayClone(handler, len);
+      for (var i = 0; i < len; ++i)
+        listeners[i].call(self, arg1, arg2);
+    }
+  }
+  function emitThree(handler, isFn, self, arg1, arg2, arg3) {
+    if (isFn)
+      handler.call(self, arg1, arg2, arg3);
+    else {
+      var len = handler.length;
+      var listeners = arrayClone(handler, len);
+      for (var i = 0; i < len; ++i)
+        listeners[i].call(self, arg1, arg2, arg3);
+    }
+  }
+
+  function emitMany(handler, isFn, self, args) {
+    if (isFn)
+      handler.apply(self, args);
+    else {
+      var len = handler.length;
+      var listeners = arrayClone(handler, len);
+      for (var i = 0; i < len; ++i)
+        listeners[i].apply(self, args);
+    }
+  }
+
+  EventEmitter.prototype.emit = function emit(type) {
+    var er, handler, len, args, i, events, domain;
+    var doError = (type === 'error');
+
+    events = this._events;
+    if (events)
+      doError = (doError && events.error == null);
+    else if (!doError)
+      return false;
+
+    domain = this.domain;
+
+    // If there is no 'error' event listener then throw.
+    if (doError) {
+      er = arguments[1];
+      if (domain) {
+        if (!er)
+          er = new Error('Uncaught, unspecified "error" event');
+        er.domainEmitter = this;
+        er.domain = domain;
+        er.domainThrown = false;
+        domain.emit('error', er);
+      } else if (er instanceof Error) {
+        throw er; // Unhandled 'error' event
+      } else {
+        // At least give some kind of context to the user
+        var err = new Error('Uncaught, unspecified "error" event. (' + er + ')');
+        err.context = er;
+        throw err;
+      }
+      return false;
+    }
+
+    handler = events[type];
+
+    if (!handler)
+      return false;
+
+    var isFn = typeof handler === 'function';
+    len = arguments.length;
+    switch (len) {
+      // fast cases
+      case 1:
+        emitNone(handler, isFn, this);
+        break;
+      case 2:
+        emitOne(handler, isFn, this, arguments[1]);
+        break;
+      case 3:
+        emitTwo(handler, isFn, this, arguments[1], arguments[2]);
+        break;
+      case 4:
+        emitThree(handler, isFn, this, arguments[1], arguments[2], arguments[3]);
+        break;
+      // slower
+      default:
+        args = new Array(len - 1);
+        for (i = 1; i < len; i++)
+          args[i - 1] = arguments[i];
+        emitMany(handler, isFn, this, args);
+    }
+
+    return true;
+  };
+
+  function _addListener(target, type, listener, prepend) {
+    var m;
+    var events;
+    var existing;
+
+    if (typeof listener !== 'function')
+      throw new TypeError('"listener" argument must be a function');
+
+    events = target._events;
+    if (!events) {
+      events = target._events = new EventHandlers();
+      target._eventsCount = 0;
+    } else {
+      // To avoid recursion in the case that type === "newListener"! Before
+      // adding it to the listeners, first emit "newListener".
+      if (events.newListener) {
+        target.emit('newListener', type,
+                    listener.listener ? listener.listener : listener);
+
+        // Re-assign `events` because a newListener handler could have caused the
+        // this._events to be assigned to a new object
+        events = target._events;
+      }
+      existing = events[type];
+    }
+
+    if (!existing) {
+      // Optimize the case of one listener. Don't need the extra array object.
+      existing = events[type] = listener;
+      ++target._eventsCount;
+    } else {
+      if (typeof existing === 'function') {
+        // Adding the second element, need to change to array.
+        existing = events[type] = prepend ? [listener, existing] :
+                                            [existing, listener];
+      } else {
+        // If we've already got an array, just append.
+        if (prepend) {
+          existing.unshift(listener);
+        } else {
+          existing.push(listener);
+        }
+      }
+
+      // Check for listener leak
+      if (!existing.warned) {
+        m = $getMaxListeners(target);
+        if (m && m > 0 && existing.length > m) {
+          existing.warned = true;
+          var w = new Error('Possible EventEmitter memory leak detected. ' +
+                              existing.length + ' ' + type + ' listeners added. ' +
+                              'Use emitter.setMaxListeners() to increase limit');
+          w.name = 'MaxListenersExceededWarning';
+          w.emitter = target;
+          w.type = type;
+          w.count = existing.length;
+          emitWarning(w);
+        }
+      }
+    }
+
+    return target;
+  }
+  function emitWarning(e) {
+    typeof console.warn === 'function' ? console.warn(e) : console.log(e);
+  }
+  EventEmitter.prototype.addListener = function addListener(type, listener) {
+    return _addListener(this, type, listener, false);
+  };
+
+  EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+  EventEmitter.prototype.prependListener =
+      function prependListener(type, listener) {
+        return _addListener(this, type, listener, true);
+      };
+
+  function _onceWrap(target, type, listener) {
+    var fired = false;
+    function g() {
+      target.removeListener(type, g);
+      if (!fired) {
+        fired = true;
+        listener.apply(target, arguments);
+      }
+    }
+    g.listener = listener;
+    return g;
+  }
+
+  EventEmitter.prototype.once = function once(type, listener) {
+    if (typeof listener !== 'function')
+      throw new TypeError('"listener" argument must be a function');
+    this.on(type, _onceWrap(this, type, listener));
+    return this;
+  };
+
+  EventEmitter.prototype.prependOnceListener =
+      function prependOnceListener(type, listener) {
+        if (typeof listener !== 'function')
+          throw new TypeError('"listener" argument must be a function');
+        this.prependListener(type, _onceWrap(this, type, listener));
+        return this;
+      };
+
+  // emits a 'removeListener' event iff the listener was removed
+  EventEmitter.prototype.removeListener =
+      function removeListener(type, listener) {
+        var list, events, position, i, originalListener;
+
+        if (typeof listener !== 'function')
+          throw new TypeError('"listener" argument must be a function');
+
+        events = this._events;
+        if (!events)
+          return this;
+
+        list = events[type];
+        if (!list)
+          return this;
+
+        if (list === listener || (list.listener && list.listener === listener)) {
+          if (--this._eventsCount === 0)
+            this._events = new EventHandlers();
+          else {
+            delete events[type];
+            if (events.removeListener)
+              this.emit('removeListener', type, list.listener || listener);
+          }
+        } else if (typeof list !== 'function') {
+          position = -1;
+
+          for (i = list.length; i-- > 0;) {
+            if (list[i] === listener ||
+                (list[i].listener && list[i].listener === listener)) {
+              originalListener = list[i].listener;
+              position = i;
+              break;
+            }
+          }
+
+          if (position < 0)
+            return this;
+
+          if (list.length === 1) {
+            list[0] = undefined;
+            if (--this._eventsCount === 0) {
+              this._events = new EventHandlers();
+              return this;
+            } else {
+              delete events[type];
+            }
+          } else {
+            spliceOne(list, position);
+          }
+
+          if (events.removeListener)
+            this.emit('removeListener', type, originalListener || listener);
+        }
+
+        return this;
+      };
+
+  EventEmitter.prototype.removeAllListeners =
+      function removeAllListeners(type) {
+        var listeners, events;
+
+        events = this._events;
+        if (!events)
+          return this;
+
+        // not listening for removeListener, no need to emit
+        if (!events.removeListener) {
+          if (arguments.length === 0) {
+            this._events = new EventHandlers();
+            this._eventsCount = 0;
+          } else if (events[type]) {
+            if (--this._eventsCount === 0)
+              this._events = new EventHandlers();
+            else
+              delete events[type];
+          }
+          return this;
+        }
+
+        // emit removeListener for all listeners on all events
+        if (arguments.length === 0) {
+          var keys = Object.keys(events);
+          for (var i = 0, key; i < keys.length; ++i) {
+            key = keys[i];
+            if (key === 'removeListener') continue;
+            this.removeAllListeners(key);
+          }
+          this.removeAllListeners('removeListener');
+          this._events = new EventHandlers();
+          this._eventsCount = 0;
+          return this;
+        }
+
+        listeners = events[type];
+
+        if (typeof listeners === 'function') {
+          this.removeListener(type, listeners);
+        } else if (listeners) {
+          // LIFO order
+          do {
+            this.removeListener(type, listeners[listeners.length - 1]);
+          } while (listeners[0]);
+        }
+
+        return this;
+      };
+
+  EventEmitter.prototype.listeners = function listeners(type) {
+    var evlistener;
+    var ret;
+    var events = this._events;
+
+    if (!events)
+      ret = [];
+    else {
+      evlistener = events[type];
+      if (!evlistener)
+        ret = [];
+      else if (typeof evlistener === 'function')
+        ret = [evlistener.listener || evlistener];
+      else
+        ret = unwrapListeners(evlistener);
+    }
+
+    return ret;
+  };
+
+  EventEmitter.listenerCount = function(emitter, type) {
+    if (typeof emitter.listenerCount === 'function') {
+      return emitter.listenerCount(type);
+    } else {
+      return listenerCount.call(emitter, type);
+    }
+  };
+
+  EventEmitter.prototype.listenerCount = listenerCount;
+  function listenerCount(type) {
+    var events = this._events;
+
+    if (events) {
+      var evlistener = events[type];
+
+      if (typeof evlistener === 'function') {
+        return 1;
+      } else if (evlistener) {
+        return evlistener.length;
+      }
+    }
+
+    return 0;
+  }
+
+  EventEmitter.prototype.eventNames = function eventNames() {
+    return this._eventsCount > 0 ? Reflect.ownKeys(this._events) : [];
+  };
+
+  // About 1.5x faster than the two-arg version of Array#splice().
+  function spliceOne(list, index) {
+    for (var i = index, k = i + 1, n = list.length; k < n; i += 1, k += 1)
+      list[i] = list[k];
+    list.pop();
+  }
+
+  function arrayClone(arr, i) {
+    var copy = new Array(i);
+    while (i--)
+      copy[i] = arr[i];
+    return copy;
+  }
+
+  function unwrapListeners(arr) {
+    var ret = new Array(arr.length);
+    for (var i = 0; i < ret.length; ++i) {
+      ret[i] = arr[i].listener || arr[i];
+    }
+    return ret;
+  }
+
+  class PropValue extends EventEmitter {
+      constructor(value, dataProxy) {
+          super();
+          this.value = value;
+          this.dep = [];
+          this.dataProxy = dataProxy;
+      }
+      setDep(watcher) {
+          this.dep.push(watcher);
+      }
+      valueOf() {
+          return this.value;
+      }
+      toString() {
+          return this.value;
+      }
+      set(value) {
+          this.value = value;
+      }
+      get() {
+          return this.value;
+      }
+      notify() {
+          this.dep.forEach(watcher => {
+              watcher.update();
+          });
+          this.emit('change', this.value);
+      }
+  }
+  class Watcher {
+      constructor(fn) {
+          this.running = false;
+          this.fn = fn;
+      }
+      update() {
+          if (this.running)
+              return;
+          this.running = true;
+          let fn = () => {
+              this.fn();
+              this.running = false;
+          };
+          runTask(fn);
+      }
+  }
+
+  class VNode {
+  }
+  VNode.ELEMENT = 0;
+  VNode.TEXT = 1;
+  VNode.COMPONENT = 2;
+
+  class ComponentVNode extends VNode {
+      constructor(Constructor, props, children) {
+          super();
+          this.type = VNode.COMPONENT;
+          this.Constructor = Constructor;
+          this.props = props || {};
+          if (Array.isArray(children)) {
+              this.children = children;
+          }
+          else {
+              if (children !== undefined && children !== null) {
+                  this.children = [children];
+              }
+              else {
+                  this.children = [];
+              }
+          }
+          // 在初始化内部一定不要调用init
+      }
+      init() {
+          // 处理自定义组件的属性
+          let props = new DataProxy({}).getData();
+          for (let prop in this.props) {
+              // 如果属性不为函数则不需要设置响应式
+              if (typeof this.props[prop] !== 'function') {
+                  props[prop] = this.props[prop];
+                  continue;
+              }
+              let [depProps, result] = getDepProps(this.props[prop]);
+              if (typeof result === 'function') {
+                  props[prop] = result;
+              }
+              else {
+                  props[prop] = result;
+                  let fn = () => props[prop] = this.props[prop]();
+                  depProps.forEach(item => {
+                      item.setDep(new Watcher(fn));
+                  });
+              }
+          }
+          let children = new DataProxy([]).getData();
+          if (this.children) {
+              for (let i = 0; i < this.children.length; i++) {
+                  if (typeof this.children[i] !== 'function') {
+                      children[i] = this.children[i];
+                      continue;
+                  }
+                  let [depProps, result] = getDepProps(this.children[i]);
+                  if (typeof result === 'function') {
+                      children[i] = result;
+                  }
+                  else {
+                      children[i] = result;
+                      let fn = () => children[i] = this.children[i]();
+                      depProps.forEach(item => {
+                          item.setDep(new Watcher(fn));
+                      });
+                  }
+              }
+          }
+          let Constructor = this.Constructor;
+          if (Constructor.prototype && Constructor.prototype.classComponent) {
+              this.component = new Constructor();
+          }
+          else {
+              let funComponent = new FunComponent();
+              funComponent.setRenderFun(Constructor);
+              this.component = funComponent;
+          }
+          this.component.setProps(props);
+          this.component.setChildren(children);
+      }
+      getComponent() {
+          this.init();
+          return this.component;
+      }
+      getRVnode() {
+          if (this.component instanceof Component) {
+              return this.component.getElementVNode().getRVnode();
+          }
+          else if (this.component instanceof ElementVNode) {
+              return this.component.getRVnode();
+          }
+          else {
+              throw new Error('组件初始化');
+          }
+      }
+  }
+
+  class TextVNode extends VNode {
+      constructor(text) {
+          super();
+          this.type = VNode.TEXT;
+          this.text = text;
+      }
+      createTextNode() {
+          this.textNode = document.createTextNode(this.text);
+          return this.textNode;
+      }
+      getRVnode() {
+          return this.textNode;
+      }
+  }
+
+  class ElementVNode extends VNode {
+      constructor(tag, props, children) {
+          super();
+          this.type = VNode.ELEMENT;
+          this.tag = tag;
+          this.props = props;
+          this.children = children;
+      }
+      getRVnode() {
+          return this.ele;
+      }
+      createEle() {
+          this.ele = document.createElement(this.tag);
+          // 处理标签属性
+          this.setProps();
+          // 处理标签子节点
+          this.setChildren();
+          return this.ele;
+      }
+      /**
+       * 处理原生node节点的属性绑定
+      */
+      setProps() {
+          if (!this.props || !this.ele)
+              return;
+          // 处理标签属性
+          for (let prop in this.props) {
+              // 如果是函数要先看函数的返回值 不然直接设置属性
+              if (typeof this.props[prop] !== 'function') {
+                  setElementProp(this.ele, prop, this.props[prop]);
+                  continue;
+              }
+              let [depProps, result] = getDepProps(this.props[prop]);
+              setElementProp(this.ele, prop, result);
+              // 如果是函数则直接跳过
+              if (typeof result === 'function')
+                  continue;
+              let fn = () => setElementProp(this.ele, prop, this.props[prop]());
+              depProps.forEach(propValue => propValue.setDep(new Watcher(fn)));
+          }
+      }
+      /**
+       * 处理子节点
+      */
+      setChildren() {
+          if (!this.ele || this.children === undefined || this.children === null)
+              return;
+          if (!Array.isArray(this.children))
+              this.children = [this.children];
+          for (let child of this.children) {
+              // 如果是函数要先看函数的返回值 不然直接添加
+              if (typeof child !== 'function') {
+                  setElementChild(this.ele, initVNodeWithList(child));
+                  continue;
+              }
+              let [depProps, result] = getDepProps(child);
+              if (Array.isArray(result)) {
+                  let pivot = initVNode('');
+                  setElementChild(this.ele, pivot);
+                  let curNodeList = initVNodeWithList(result);
+                  addFragmentEle(this.ele, curNodeList, pivot);
+                  let fn = () => {
+                      removeFragmentEle(curNodeList);
+                      let newVnodeList = child();
+                      if (Array.isArray(newVnodeList)) {
+                          curNodeList = initVNodeWithList(newVnodeList);
+                          addFragmentEle(this.ele, curNodeList, pivot);
+                      }
+                  };
+                  depProps.forEach(propValue => propValue.setDep(new Watcher(fn)));
+              }
+              else {
+                  let curNode = initVNode(result);
+                  setElementChild(this.ele, curNode);
+                  let fn = () => {
+                      let newNode = child();
+                      curNode = replaceElementChild(this.ele, initVNode(newNode), curNode);
+                  };
+                  depProps.forEach(propValue => propValue.setDep(new Watcher(fn)));
+              }
+          }
+      }
+  }
+  /**
+   * 处理原生标签的属性绑定
+  */
+  function setElementProp(ele, prop, value) {
+      if (typeof value === 'string') {
+          if (prop === 'className') { // className比较特殊
+              ele.className = value;
+          }
+          else {
+              ele.setAttribute(prop, value);
+          }
+      }
+      else if (prop === 'style' && typeof value === 'object' && value !== null) { // 对于style标签为对象的值的特殊处理
+          let styleStringList = [];
+          for (let cssattr in value) {
+              styleStringList.push(`${cssattr}:${value[cssattr]};`);
+          }
+          ele.setAttribute(prop, styleStringList.join(''));
+      }
+      else if (typeof value === 'function') { // 如果是function则绑定事件
+          let pattern = /^on([a-zA-Z]+)/;
+          if (pattern.test(prop)) {
+              let mat = prop.match(pattern);
+              mat && ele.addEventListener(mat[1].toLocaleLowerCase(), value.bind(ele));
+          }
+          else {
+              ele.addEventListener(prop, value.bind(ele));
+          }
+      }
+  }
+  /**
+   * 处理子节点的添加
+  */
+  function setElementChild(ele, childNode) {
+      if (Array.isArray(childNode)) {
+          childNode.forEach(subChildNode => ele.appendChild(subChildNode.getRVnode()));
+      }
+      else {
+          ele.appendChild(childNode.getRVnode());
+      }
+  }
+  // 初始化虚拟节点，并生成真实节点
+  function initVNode(baseNode) {
+      // 如果是普通的文本字符串
+      if (typeof baseNode === "string") {
+          let textNode = new TextVNode(baseNode);
+          textNode.createTextNode();
+          return textNode;
+      }
+      else if (baseNode instanceof ComponentVNode) {
+          baseNode.getComponent().renderRoot().createEle();
+          return baseNode;
+      }
+      else if (baseNode instanceof ElementVNode) { // 如果是元素节点
+          baseNode.createEle();
+          return baseNode;
+      }
+      else {
+          // 特殊处理 为null则不渲染返回空节点
+          if (baseNode === null)
+              baseNode = '';
+          let textNode = new TextVNode(String(baseNode));
+          textNode.createTextNode();
+          return textNode;
+      }
+  }
+  function initVNodeWithList(baseNode) {
+      if (Array.isArray(baseNode)) {
+          return baseNode.map(item => initVNode(item));
+      }
+      else {
+          return initVNode(baseNode);
+      }
+  }
+  /**
+   * 替换并返回现在的节点
+  */
+  function replaceElementChild(ele, newNode, oldNode) {
+      if (newNode instanceof TextVNode && oldNode instanceof TextVNode) {
+          oldNode.getRVnode().nodeValue = newNode.getRVnode().nodeValue;
+          return oldNode;
+      }
+      ele.replaceChild(newNode.getRVnode(), oldNode.getRVnode());
+      return newNode;
+  }
+  function addFragmentEle(ele, childNodes, pivot) {
+      let fragment = document.createDocumentFragment();
+      childNodes.forEach(child => fragment.appendChild(child.getRVnode()));
+      if (pivot)
+          ele.insertBefore(fragment, pivot.getRVnode());
+      else
+          ele.appendChild(fragment);
+  }
+  function removeFragmentEle(childNodes) {
+      childNodes.forEach(child => child.getRVnode().remove());
+  }
+
+  // 获取一个响应式的对象
+  function defineState(data, config) {
+      return new State(data, config);
+  }
+  function mount(selector, rootNode) {
+      let ele = document.querySelector(selector);
+      let rootEle = null;
+      if (rootNode instanceof Component) {
+          rootEle = rootNode.renderRoot().createEle();
+      }
+      else {
+          let component = rootNode.getComponent();
+          if (component instanceof Component)
+              rootEle = component.renderRoot().createEle();
+          else if (component instanceof ElementVNode)
+              rootEle = component.createEle();
+      }
+      if (ele && rootEle) {
+          if (ele.parentNode) {
+              ele.parentNode.replaceChild(rootEle, ele);
+          }
+      }
+  }
+  function createNode(nodeTag, props, children) {
+      if (typeof nodeTag === 'string') {
+          return new ElementVNode(nodeTag, props, children);
+      }
+      else if (typeof nodeTag === 'function') {
+          return new ComponentVNode(nodeTag, props, children);
+      }
+      else {
+          throw new Error('只能传入字符串或者构造函数');
+      }
+  }
+
+  class Vact {
+      static getDepPool() {
+          return this.depPool;
+      }
+      static runTask(fn) {
+          this.watcherTask.push(fn);
+          if (!this.updating) {
+              this.updating = true;
+              Promise.resolve()
+                  .then(() => {
+                  let callbcak;
+                  while (callbcak = this.watcherTask.shift()) {
+                      callbcak();
+                  }
+              })
+                  .then(() => this.updating = false);
+          }
+      }
+  }
+  Vact.depPool = [];
+  Vact.updating = false;
+  Vact.watcherTask = [];
+  Vact.mount = mount;
+  Vact.createNode = createNode;
+  function getDepPool() {
+      return Vact.getDepPool();
+  }
+  function getDepProps(fn) {
+      let depProps = [];
+      let pool = Vact.getDepPool();
+      pool.push(depProps);
+      let res = fn();
+      pool.splice(pool.indexOf(depProps), 1);
+      return [depProps, res];
+  }
+  function runTask(fn) {
+      Vact.runTask(fn);
+  }
+
+  /**
+   * 数据响应式中心
+  */
+  /**
+   * 数据事件存放处
+  */
+  class DataEventProxy {
+      constructor() {
+          this.valueMap = new WeakMap();
+      }
+      getProp(target, prop) {
+          if (!this.valueMap.get(target)) {
+              this.valueMap.set(target, {});
+          }
+          let valueTarget = this.valueMap.get(target);
+          if (!valueTarget[prop]) {
+              let propValue = new PropValue(Array.isArray(target[prop]) ? new Proxy(target[prop], {
+                  set(target, prop, value, receiver) {
+                      // 这里一定要先设置再通知
+                      let res = Reflect.set(target, prop, value, receiver);
+                      propValue.notify();
+                      return res;
+                  }
+              }) : target[prop]);
+              valueTarget[prop] = propValue;
+          }
+          return valueTarget[prop];
+      }
+      // 获取用于绑定属性事件的代理对象
+      getEventProxy(target) {
+          return this.valueMap.get(target);
+      }
+      // 设置用于绑定属性事件的代理对象
+      setEventProxy(target, valueTarget) {
+          this.valueMap.set(target, valueTarget);
+      }
+  }
+  /**
+   * 监控数据响应变化处
+  */
+  class DataProxy {
+      constructor(data) {
+          this.target = data;
+          this.dataProxyValue = new DataEventProxy();
+          // 监控普通对象
+          const handler = {
+              get: (target, prop, receiver) => {
+                  if (typeof target[prop] === 'object' && target[prop] !== null && !Array.isArray(target[prop]) && target[prop].constructor === Object) {
+                      return new Proxy(target[prop], handler);
+                  }
+                  else if (typeof target[prop] === 'function') {
+                      return Reflect.get(target, prop, receiver);
+                  }
+                  else {
+                      let propValue = this.dataProxyValue.getProp(target, prop);
+                      for (let depArr of getDepPool()) {
+                          if (!depArr.includes(propValue)) {
+                              depArr.push(propValue);
+                          }
+                      }
+                      return propValue.value;
+                  }
+              },
+              set: (target, prop, value, receiver) => {
+                  if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.constructor === Object) {
+                      // 当对象被替换为新对象时 通知对象里所有的响应式
+                      let valueTarget = this.dataProxyValue.getEventProxy(target[prop]);
+                      let res = Reflect.set(target, prop, value, receiver);
+                      this.replaceProps(value, valueTarget);
+                      return res;
+                  }
+                  else {
+                      let propValue = this.dataProxyValue.getProp(target, prop);
+                      propValue.value = Array.isArray(value) ? new Proxy(value, {
+                          set(target, prop, value, receiver) {
+                              // 这里一定要先设置再通知
+                              let res = Reflect.set(target, prop, value, receiver);
+                              propValue.notify();
+                              return res;
+                          }
+                      }) : value;
+                      let res = Reflect.set(target, prop, value, receiver);
+                      propValue.notify();
+                      return res;
+                  }
+              }
+          };
+          this.data = new Proxy(data, handler);
+      }
+      getData() {
+          return this.data;
+      }
+      getTarget() {
+          return this.target;
+      }
+      getEventProxy() {
+          return this.dataProxyValue;
+      }
+      // 当对象属性被新对象替换时
+      replaceProps(target, valueTarget) {
+          for (let prop in valueTarget) {
+              let propValue = valueTarget[prop];
+              propValue.value = target[prop];
+              propValue.notify();
+          }
+          this.dataProxyValue.setEventProxy(target, valueTarget);
+      }
+  }
+
+  class Component {
+      constructor(config = {}) {
+          this.config = config;
+          // 设置响应式数据对象
+          this.data = new DataProxy(this.config.data || {}).getData();
+      }
+      setProps(props) {
+          this.props = props;
+      }
+      setChildren(children) {
+          this.children = children;
+      }
+      renderRoot() {
+          return this.elementVNode = this.render(createNode);
+      }
+      getElementVNode() {
+          return this.elementVNode;
+      }
+  }
+  Component.prototype.classComponent = true;
+  /**
+   * 解决函数式组件的类
+  */
+  class FunComponent extends Component {
+      constructor() {
+          super();
+      }
+      setRenderFun(fun) {
+          this.renderFun = fun;
+      }
+      render() {
+          return this.renderFun.call(this, this.props, this.children);
+      }
+  }
+
+  Vact.Component = Component;
+  const h = createNode;
+
+  exports.Component = Component;
+  exports.createNode = createNode;
+  exports["default"] = Vact;
+  exports.defineState = defineState;
+  exports.h = h;
+  exports.mount = mount;
+
+  Object.defineProperty(exports, '__esModule', { value: true });
+
+}));

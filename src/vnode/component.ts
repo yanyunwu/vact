@@ -1,25 +1,23 @@
-import { Component } from "../component"
+import { Component, FunComponent } from "../component"
 import { getDepProps } from "../application"
 import { DataProxy } from "../proxy"
 import { Watcher } from "../value"
 import { VNode } from "./baseNode"
-import { RBaseChildVNode, SubComponent } from "./type"
+import { SubComponent } from "./type"
 import { ElementVNode } from "./element"
-
-
 
 /**
  * 组件节点
 */
 interface SubComponentConstructor {
-  new(props: Record<any, any>, children: any[]): SubComponent
+  new(): SubComponent
 }
-type FunComponent = (props: Record<any, any>, children: any[]) => RBaseChildVNode
-type ComponentConstructor = SubComponentConstructor | FunComponent
+type FunComponentType = (props?: Record<any, any>, children?: any[]) => ElementVNode
+type ComponentConstructor = SubComponentConstructor | FunComponentType
 
 export class ComponentVNode extends VNode {
   type: number = VNode.COMPONENT
-  component?: SubComponent | RBaseChildVNode
+  component?: SubComponent
   Constructor: ComponentConstructor
   props?: Record<any, any>
   children?: any[]
@@ -84,28 +82,24 @@ export class ComponentVNode extends VNode {
           })
 
         }
-
-
-
       }
     }
 
     let Constructor = this.Constructor
-    if (Constructor.prototype) {
-      this.component = new (Constructor as SubComponentConstructor)(props, children)
+    if (Constructor.prototype && Constructor.prototype.classComponent) {
+      this.component = new (Constructor as SubComponentConstructor)()
     } else {
-      this.component = (Constructor as FunComponent)(props, children)
+      let funComponent = new FunComponent()
+      funComponent.setRenderFun(Constructor as FunComponentType)
+      this.component = funComponent
     }
 
-    if (this.component instanceof Component) {
-      this.component.setProps(props)
-      this.component.setChildren(children)
-    }
-
+    this.component.setProps(props)
+    this.component.setChildren(children)
 
   }
 
-  getComponent(): SubComponent | RBaseChildVNode {
+  getComponent(): SubComponent {
     this.init()
     return this.component!
   }
@@ -120,6 +114,5 @@ export class ComponentVNode extends VNode {
       throw new Error('组件初始化')
     }
   }
-
 
 }

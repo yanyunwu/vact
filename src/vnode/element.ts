@@ -1,5 +1,4 @@
 import { getDepProps } from "../application"
-import { Component } from "../component"
 import { Watcher } from "../value"
 import { VNode } from "./baseNode"
 import { ComponentVNode } from "./component"
@@ -17,7 +16,7 @@ export class ElementVNode extends VNode {
   type: number = VNode.ELEMENT
   ele?: HTMLElement
 
-  constructor(tag: string, props?: {}, children?: []) {
+  constructor(tag: string, props?: Record<any, any>, children?: any[]) {
     super()
     this.tag = tag;
     this.props = props;
@@ -33,7 +32,6 @@ export class ElementVNode extends VNode {
     // 处理标签属性
     this.setProps()
     // 处理标签子节点
-    // this.setChildren()
     this.setChildren()
     return this.ele
   }
@@ -157,12 +155,7 @@ function initVNode(baseNode: BaseChildVNode): ChildVNode {
     textNode.createTextNode()
     return textNode
   } else if (baseNode instanceof ComponentVNode) {
-    baseNode.getComponent()
-    // realNode = child.getComponent().renderRoot().createEle()
-    let component = baseNode.getComponent()
-    // 这里判断是类组件还是函数式组件
-    if (component instanceof Component) component.renderRoot().createEle()
-    else if (component instanceof ElementVNode) component.createEle()
+    baseNode.getComponent().renderRoot().createEle()
     return baseNode
   } else if (baseNode instanceof ElementVNode) {  // 如果是元素节点
     baseNode.createEle()
