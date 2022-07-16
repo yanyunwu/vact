@@ -18,6 +18,7 @@ export abstract class Component {
   public data?: {}
   props?: {}
   children?: any[]
+  elementVNode?: ElementVNode
 
   constructor(config: Config = {}) {
     this.config = config
@@ -41,6 +42,10 @@ export abstract class Component {
   abstract render(h: (a: string | SubConstructor, b?: {}, c?: []) => ElementVNode | ComponentVNode): ElementVNode
 
   renderRoot(): ElementVNode {
-    return this.render(createNode)
+    return this.elementVNode = this.render(createNode)
+  }
+
+  getElementVNode(): ElementVNode {
+    return this.elementVNode!
   }
 }

@@ -4,6 +4,7 @@ import { DataProxy } from "../proxy"
 import { PropValue, Watcher } from "../value"
 import { VNode } from "./baseNode"
 import { ElementVNodeChild, SubComponent } from "./type"
+import { ElementVNode } from "./element"
 
 
 
@@ -108,6 +109,17 @@ export class ComponentVNode extends VNode {
   getComponent(): SubComponent | ElementVNodeChild {
     this.init()
     return this.component!
+  }
+
+
+  getRVnode(): HTMLElement {
+    if (this.component instanceof Component) {
+      return this.component.getElementVNode().getRVnode()
+    } else if (this.component instanceof ElementVNode) {
+      return this.component.getRVnode()
+    } else {
+      throw new Error('组件初始化')
+    }
   }
 
 

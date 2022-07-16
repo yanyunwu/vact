@@ -15,4 +15,8 @@ export class TextVNode extends VNode {
     this.textNode = document.createTextNode(this.text)
     return this.textNode
   }
+
+  getRVnode(): HTMLElement | Text {
+    return this.textNode!
+  }
 }

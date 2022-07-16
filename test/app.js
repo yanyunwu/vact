@@ -1,7 +1,7 @@
 
 
 
-/* class App extends Vact.Component {
+class App extends Vact.Component {
   constructor(props, children) {
     super({
       data: {
@@ -26,7 +26,7 @@
       'div',
       null,
       [
-        () => this.data.show ? new HelloWorld(null, [() => this.data.text]) : "",
+        () => this.data.show ? h(HelloWorld, null, [() => this.data.text]) : "",
         h('button', {
           onClick: () => (e) => {
             this.data.num++
@@ -68,11 +68,11 @@ class HelloWorld extends Vact.Component {
       [
         '我是h1标签',
         this.children[0],
-        () => [1, 2, 3, [4, 5]]
+        [1, 2, 3, [4, 5, [6, 7]]]
       ]
     )
   }
-} */
+}
 
 /* class App extends Vact.Component {
   constructor() {
@@ -106,7 +106,7 @@ class HelloWorld extends Vact.Component {
             h('li', null, '不参与')
           ]),
         ]),
-        h('div', null, new Test())
+        h('div', null, h(Test))
       ]
     )
   }
@@ -240,7 +240,7 @@ class App extends Vact.Component {
   }
 } */
 
-class App extends Vact.Component {
+/* class App extends Vact.Component {
   constructor() {
     super({
       data: {
@@ -253,6 +253,7 @@ class App extends Vact.Component {
   render(h) {
     return h('div', {
       className: () => this.data.className,
+      // style: () => "color: red;"
       // onClick: () => () => this.data.className = 'blue'
     }, ['hhh',
       h(Test, { onClick: () => () => this.data.className = 'blue' }, ['哈哈哈1'])
@@ -262,6 +263,29 @@ class App extends Vact.Component {
 
 let Test = (props, children) => {
   return Vact.createNode('button', { onClick: () => props.onClick }, children[0])
+} */
+
+/* class App extends Vact.Component {
+  constructor() {
+    super({
+      data: {
+        count: 0,
+        show: true
+      }
+    })
+  }
+
+  render(h) {
+    return h('div', null, ['hhhh', h('button', { click: () => () => this.data.show = !this.data.show }, '按钮'),
+      () => this.data.show ? h(Test, null, "ggg") : ''
+    ])
+  }
 }
+
+class Test extends Vact.Component {
+  render(h) {
+    return h('button', null, this.children)
+  }
+} */
 
 Vact.mount('#app', new App())

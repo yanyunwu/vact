@@ -5,5 +5,6 @@ export const mount = Vact.mount
 export const Component = Vact.Component
 export const createNode = Vact.createNode
 export { defineState }
+export const h = createNode
 export default Vact
 

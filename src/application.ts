@@ -1,4 +1,5 @@
 import { Component } from './component';
+import { PropValue } from './value';
 // import { ElementVNode, SubComponent, ComponentVNode } from './vnode'
 import { ElementVNode, ComponentVNode } from './vnode'
 import { SubComponent } from './vnode/type'
@@ -14,11 +15,11 @@ export function mount(selector: string, rootNode: Component) {
 }
 
 export type SubConstructor = new (props: Record<any, any>, children: any[]) => SubComponent
-export function createNode(a: string | SubConstructor, b?: {}, c?: []): ElementVNode | ComponentVNode {
-  if (typeof a === 'string') {
-    return new ElementVNode(a, b, c)
-  } else if (typeof a === 'function') {
-    return new ComponentVNode(a, b, c)
+export function createNode(nodeTag: string | SubConstructor, props?: {}, children?: []): ElementVNode | ComponentVNode {
+  if (typeof nodeTag === 'string') {
+    return new ElementVNode(nodeTag, props, children)
+  } else if (typeof nodeTag === 'function') {
+    return new ComponentVNode(nodeTag, props, children)
   } else {
     throw new Error('只能传入字符串或者构造函数')
   }
@@ -34,4 +35,17 @@ export class Vact {
   static Component = Component
   static mount = mount
   static createNode = createNode
+}
+
+export function setDeps() {
+
+}
+
+export function getDepProps<T>(fn: () => T): [PropValue[], T] {
+  let depProps: PropValue[] = []
+  let pool = Vact.depPool
+  pool.push(depProps)
+  let res = fn()
+  pool.splice(pool.indexOf(depProps), 1)
+  return [depProps, res]
 }

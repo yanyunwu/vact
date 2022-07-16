@@ -9,4 +9,5 @@ export interface SubComponent {
   renderRoot(): ElementVNode
   setProps(props: {}): void
   setChildren(children: any[]): void
+  getElementVNode(): ElementVNode
 }

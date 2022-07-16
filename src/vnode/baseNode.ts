@@ -5,4 +5,5 @@ export abstract class VNode {
   static ELEMENT: number = 0
   static TEXT: number = 1
   static COMPONENT: number = 2
+  abstract getRVnode(): HTMLElement | Text
 }
