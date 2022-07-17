@@ -2,6 +2,7 @@ import { getDepProps } from "../application"
 import { Watcher } from "../value"
 import { VNode } from "./baseNode"
 import { ComponentVNode } from "./component"
+import { FragmentVNode } from "./fragment"
 import { TextVNode } from "./text"
 import { BaseChildVNode, RBaseChildVNode, ChildVNode } from "./type"
 
@@ -74,7 +75,7 @@ export class ElementVNode extends VNode {
     for (let child of this.children) {
       // 如果是函数要先看函数的返回值 不然直接添加
       if (typeof child !== 'function') {
-        setElementChild(this.ele, initVNodeWithList(child))
+        setElementChild(this.ele, initVNodeWithList(child, this))
         continue
       }
 
@@ -83,23 +84,23 @@ export class ElementVNode extends VNode {
       if (Array.isArray(result)) {
         let pivot = initVNode('');
         setElementChild(this.ele, pivot)
-        let curNodeList = initVNodeWithList(result) as ChildVNode[]
+        let curNodeList = initVNodeWithList(result, this) as ChildVNode[]
         addFragmentEle(this.ele, curNodeList, pivot as TextVNode)
         let fn = () => {
           removeFragmentEle(curNodeList)
           let newVnodeList = (child as Function)()
           if (Array.isArray(newVnodeList)) {
-            curNodeList = initVNodeWithList(newVnodeList) as ChildVNode[]
+            curNodeList = initVNodeWithList(newVnodeList, this) as ChildVNode[]
             addFragmentEle(this.ele!, curNodeList, pivot as TextVNode)
           }
         }
         depProps.forEach(propValue => propValue.setDep(new Watcher(fn)))
       } else {
-        let curNode = initVNode(result)
+        let curNode = initVNode(result, this)
         setElementChild(this.ele, curNode)
         let fn = () => {
           let newNode = (child as () => BaseChildVNode)()
-          curNode = replaceElementChild(this.ele!, initVNode(newNode), curNode)
+          curNode = replaceElementChild(this.ele!, initVNode(newNode, this), curNode)
         }
         depProps.forEach(propValue => propValue.setDep(new Watcher(fn)))
       }
@@ -112,7 +113,7 @@ export class ElementVNode extends VNode {
  * 处理原生标签的属性绑定 
 */
 
-function setElementProp(ele: HTMLElement, prop: string, value: string | Record<string, string> | Function) {
+export function setElementProp(ele: HTMLElement, prop: string, value: string | Record<string, string> | Function) {
   if (typeof value === 'string') {
     if (prop === 'className') { // className比较特殊
       ele.className = value
@@ -140,7 +141,7 @@ function setElementProp(ele: HTMLElement, prop: string, value: string | Record<s
  * 处理子节点的添加
 */
 
-function setElementChild(ele: HTMLElement, childNode: ChildVNode | Array<ChildVNode>) {
+export function setElementChild(ele: HTMLElement, childNode: ChildVNode | Array<ChildVNode>) {
   if (Array.isArray(childNode)) {
     childNode.forEach(subChildNode => ele.appendChild(subChildNode.getRNode()))
   } else {
@@ -149,39 +150,47 @@ function setElementChild(ele: HTMLElement, childNode: ChildVNode | Array<ChildVN
 }
 
 // 初始化虚拟节点，并生成真实节点
-function initVNode(baseNode: BaseChildVNode): ChildVNode {
+export function initVNode(baseNode: BaseChildVNode, parent?: ElementVNode): ChildVNode {
   // 如果是普通的文本字符串
   if (typeof baseNode === "string") {
     let textNode = new TextVNode(baseNode)
+    textNode.setParentVNode(parent)
     textNode.createTextNode()
     return textNode
   } else if (baseNode instanceof ComponentVNode) { // render可能返回ElementVNode 也可能返回 ComponentVNode
     baseNode.createComponent().createElementVNode().createEle()
+    baseNode.setParentVNode(parent)
     return baseNode
   } else if (baseNode instanceof ElementVNode) {  // 如果是元素节点
     baseNode.createEle()
+    baseNode.setParentVNode(parent)
+    return baseNode
+  } else if (baseNode instanceof FragmentVNode) {
+    baseNode.createFragment()
+    baseNode.setParentVNode(parent)
     return baseNode
   } else {
     // 特殊处理 为null则不渲染返回空节点
     if (baseNode === null) baseNode = ''
     let textNode = new TextVNode(String(baseNode))
+    textNode.setParentVNode(parent)
     textNode.createTextNode()
     return textNode
   }
 }
 
-function initVNodeWithList(baseNode: BaseChildVNode | Array<BaseChildVNode>): ChildVNode | Array<ChildVNode> {
+export function initVNodeWithList(baseNode: BaseChildVNode | Array<BaseChildVNode>, parent?: ElementVNode): ChildVNode | Array<ChildVNode> {
   if (Array.isArray(baseNode)) {
-    return baseNode.map(item => initVNode(item))
+    return baseNode.map(item => initVNode(item, parent))
   } else {
-    return initVNode(baseNode)
+    return initVNode(baseNode, parent)
   }
 }
 
 /**
  * 替换并返回现在的节点
 */
-function replaceElementChild(ele: HTMLElement, newNode: ChildVNode, oldNode: ChildVNode): ChildVNode {
+export function replaceElementChild(ele: HTMLElement, newNode: ChildVNode, oldNode: ChildVNode): ChildVNode {
   if (newNode instanceof TextVNode && oldNode instanceof TextVNode) {
     oldNode.getRNode().nodeValue = newNode.getRNode().nodeValue
     return oldNode
@@ -192,13 +201,13 @@ function replaceElementChild(ele: HTMLElement, newNode: ChildVNode, oldNode: Chi
 }
 
 
-function addFragmentEle(ele: HTMLElement, childNodes: ChildVNode[], pivot?: TextVNode) {
+export function addFragmentEle(ele: HTMLElement, childNodes: ChildVNode[], pivot?: TextVNode) {
   let fragment = document.createDocumentFragment()
   childNodes.forEach(child => fragment.appendChild(child.getRNode()))
   if (pivot) ele.insertBefore(fragment, pivot.getRNode())
   else ele.appendChild(fragment)
 }
 
-function removeFragmentEle(childNodes: ChildVNode[]) {
+export function removeFragmentEle(childNodes: ChildVNode[]) {
   childNodes.forEach(child => child.getRNode().remove())
 }

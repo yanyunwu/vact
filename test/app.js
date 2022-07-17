@@ -308,7 +308,7 @@ function App() {
   ])
 } */
 
-class Test extends Vact.Component {
+/* class Test extends Vact.Component {
   constructor() {
     super()
   }
@@ -331,6 +331,14 @@ function App() {
     () => state.data.count,
     h(Test, { setNum: () => () => state.data.count += 2 }, [() => state.data.count, null])
   ])
+} */
+
+
+
+function App() {
+  // console.log(Vact);
+  this.data.str = 'uuu'
+  return h('div', { onClick: () => () => this.data.str = 'ads' }, h(Vact.Fragment, null, () => this.data.str))
 }
 
 

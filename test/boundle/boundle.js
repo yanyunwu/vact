@@ -655,6 +655,87 @@
       }
   }
 
+  class VNode {
+      // 设置节点的父节点
+      setParentVNode(parent) {
+          this.parentVNode = parent;
+      }
+  }
+  VNode.ELEMENT = 0;
+  VNode.TEXT = 1;
+  VNode.COMPONENT = 2;
+  VNode.FRAGMENT = 3;
+
+  // 这个模块暂时没用
+  class FragmentVNode extends VNode {
+      constructor(props, children) {
+          super();
+          this.type = VNode.FRAGMENT;
+          this.props = props;
+          this.children = children;
+      }
+      getRNode() {
+          return this.fragment;
+      }
+      getParentMountedEle() {
+          if (this.parentVNode instanceof FragmentVNode) {
+              return this.parentVNode.getParentMountedEle();
+          }
+          else {
+              return this.parentVNode.getRNode();
+          }
+      }
+      createFragment() {
+          if (this.fragment)
+              return this.fragment; // 如果已经初始化过则不要再初始化
+          this.fragment = document.createDocumentFragment();
+          // 处理标签子节点
+          this.setChildren();
+          return this.fragment;
+      }
+      /**
+       * 处理子节点
+      */
+      setChildren() {
+          if (!this.fragment || this.children === undefined || this.children === null)
+              return;
+          if (!Array.isArray(this.children))
+              this.children = [this.children];
+          for (let child of this.children) {
+              // 如果是函数要先看函数的返回值 不然直接添加
+              if (typeof child !== 'function') {
+                  setElementChild(this.fragment, initVNodeWithList(child));
+                  continue;
+              }
+              let [depProps, result] = getDepProps(child);
+              if (Array.isArray(result)) {
+                  let pivot = initVNode('');
+                  setElementChild(this.fragment, pivot);
+                  let curNodeList = initVNodeWithList(result);
+                  addFragmentEle(this.fragment, curNodeList, pivot);
+                  let fn = () => {
+                      removeFragmentEle(curNodeList);
+                      let newVnodeList = child();
+                      if (Array.isArray(newVnodeList)) {
+                          curNodeList = initVNodeWithList(newVnodeList);
+                          addFragmentEle(this.getParentMountedEle(), curNodeList, pivot);
+                      }
+                  };
+                  depProps.forEach(propValue => propValue.setDep(new Watcher(fn)));
+              }
+              else {
+                  let curNode = initVNode(result);
+                  setElementChild(this.fragment, curNode);
+                  let fn = () => {
+                      let newNode = child();
+                      curNode = replaceElementChild(this.getParentMountedEle(), initVNode(newNode), curNode);
+                  };
+                  depProps.forEach(propValue => propValue.setDep(new Watcher(fn)));
+              }
+          }
+      }
+  }
+
   // 获取一个响应式的对象
   function defineState(data, config) {
       return new State(data, config);
@@ -681,6 +762,9 @@
       else if (typeof nodeTag === 'function') {
           return new ComponentVNode(nodeTag, props, children);
       }
+      if (typeof nodeTag === 'symbol' && nodeTag === Vact.Fragment) {
+          return new FragmentVNode(props, children);
+      }
       else {
           throw new Error('只能传入字符串或者构造函数');
       }
@@ -705,6 +789,7 @@
           }
       }
   }
+  Vact.Fragment = Symbol('fragment标识');
   Vact.depPool = [];
   Vact.updating = false;
   Vact.watcherTask = [];
@@ -724,13 +809,6 @@
   function runTask(fn) {
       Vact.runTask(fn);
   }
-
-  class VNode {
-  }
-  VNode.ELEMENT = 0;
-  VNode.TEXT = 1;
-  VNode.COMPONENT = 2;
-  VNode.FRAGMENT = 3;
 
   class ComponentVNode extends VNode {
       constructor(Constructor, props, children) {
@@ -892,31 +970,31 @@
           for (let child of this.children) {
               // 如果是函数要先看函数的返回值 不然直接添加
               if (typeof child !== 'function') {
-                  setElementChild(this.ele, initVNodeWithList(child));
+                  setElementChild(this.ele, initVNodeWithList(child, this));
                   continue;
               }
               let [depProps, result] = getDepProps(child);
               if (Array.isArray(result)) {
                   let pivot = initVNode('');
                   setElementChild(this.ele, pivot);
-                  let curNodeList = initVNodeWithList(result);
+                  let curNodeList = initVNodeWithList(result, this);
                   addFragmentEle(this.ele, curNodeList, pivot);
                   let fn = () => {
                       removeFragmentEle(curNodeList);
                       let newVnodeList = child();
                       if (Array.isArray(newVnodeList)) {
-                          curNodeList = initVNodeWithList(newVnodeList);
+                          curNodeList = initVNodeWithList(newVnodeList, this);
                           addFragmentEle(this.ele, curNodeList, pivot);
                       }
                   };
                   depProps.forEach(propValue => propValue.setDep(new Watcher(fn)));
               }
               else {
-                  let curNode = initVNode(result);
+                  let curNode = initVNode(result, this);
                   setElementChild(this.ele, curNode);
                   let fn = () => {
                       let newNode = child();
-                      curNode = replaceElementChild(this.ele, initVNode(newNode), curNode);
+                      curNode = replaceElementChild(this.ele, initVNode(newNode, this), curNode);
                   };
                   depProps.forEach(propValue => propValue.setDep(new Watcher(fn)));
               }
@@ -965,19 +1043,27 @@
       }
   }
   // 初始化虚拟节点，并生成真实节点
-  function initVNode(baseNode) {
+  function initVNode(baseNode, parent) {
       // 如果是普通的文本字符串
       if (typeof baseNode === "string") {
           let textNode = new TextVNode(baseNode);
+          textNode.setParentVNode(parent);
           textNode.createTextNode();
           return textNode;
       }
       else if (baseNode instanceof ComponentVNode) { // render可能返回ElementVNode 也可能返回 ComponentVNode
           baseNode.createComponent().createElementVNode().createEle();
+          baseNode.setParentVNode(parent);
           return baseNode;
       }
       else if (baseNode instanceof ElementVNode) { // 如果是元素节点
           baseNode.createEle();
+          baseNode.setParentVNode(parent);
+          return baseNode;
+      }
+      else if (baseNode instanceof FragmentVNode) {
+          baseNode.createFragment();
+          baseNode.setParentVNode(parent);
           return baseNode;
       }
       else {
@@ -985,16 +1071,17 @@
           if (baseNode === null)
               baseNode = '';
           let textNode = new TextVNode(String(baseNode));
+          textNode.setParentVNode(parent);
           textNode.createTextNode();
           return textNode;
       }
   }
-  function initVNodeWithList(baseNode) {
+  function initVNodeWithList(baseNode, parent) {
       if (Array.isArray(baseNode)) {
-          return baseNode.map(item => initVNode(item));
+          return baseNode.map(item => initVNode(item, parent));
       }
       else {
-          return initVNode(baseNode);
+          return initVNode(baseNode, parent);
       }
   }
   /**
@@ -1063,8 +1150,10 @@
 
   Vact.Component = Component;
   const h = createNode;
+  const Fragment = Vact.Fragment;
 
   exports.Component = Component;
+  exports.Fragment = Fragment;
   exports.createNode = createNode;
   exports["default"] = Vact;
   exports.defineState = defineState;

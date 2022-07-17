@@ -2,6 +2,7 @@ import { createNode, mount } from './utils';
 import { PropValue } from './value';
 
 export class Vact {
+  public static Fragment = Symbol('fragment标识')
   private static depPool: any[] = []
   static getDepPool(): any[] {
     return this.depPool

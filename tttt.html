@@ -11,8 +11,10 @@
 <body>
   <div id="box"></div>
   <script>
-    let box = document.getElementById('box')
-    document.body.replaceChild(box, box)
+    let fragment = document.createDocumentFragment()
+    fragment.append('dasd')
+    document.body.appendChild(fragment)
+    console.dir(fragment);
   </script>
 </body>
 

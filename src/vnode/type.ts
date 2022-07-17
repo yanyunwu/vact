@@ -1,8 +1,9 @@
 import { Component } from "../component"
 import { TextVNode, ElementVNode, ComponentVNode } from "../vnode"
+import { FragmentVNode } from "./fragment"
 
-export type ChildVNode = ElementVNode | TextVNode | ComponentVNode
-export type BaseChildVNode = string | ElementVNode | Component | ComponentVNode | Array<string | ElementVNode | Component | ComponentVNode>
+export type ChildVNode = ElementVNode | TextVNode | ComponentVNode | FragmentVNode
+export type BaseChildVNode = string | ElementVNode | Component | ComponentVNode | FragmentVNode | Array<string | ElementVNode | Component | ComponentVNode | FragmentVNode>
 export type RBaseChildVNode = BaseChildVNode | (() => BaseChildVNode)
 
 export interface SubComponent {
