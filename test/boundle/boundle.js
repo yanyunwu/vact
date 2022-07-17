@@ -6,34 +6,6 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Vact = {}));
 })(this, (function (exports) { 'use strict';
 
-  class State {
-      constructor(data, config) {
-          this.dataProxy = new DataProxy(data);
-          this.config = config;
-      }
-      get data() {
-          return this.dataProxy.getData();
-      }
-      // 用于监控数据变化
-      watch(path, fn) {
-          let props = path.split('.');
-          if (!props.length)
-              return;
-          let obj = this.dataProxy.getTarget();
-          let prop = props.shift() || '';
-          while (props.length) {
-              let p = props.shift();
-              if (p) {
-                  obj = obj[prop];
-                  prop = p;
-              }
-          }
-          let events = this.dataProxy.getEventProxy();
-          let propValue = events.getProp(obj, prop);
-          propValue.on('change', fn);
-      }
-  }
-
   var domain;
 
   // This constructor is used to store event handlers. Instantiating this is
@@ -546,11 +518,219 @@
       }
   }
 
+  /**
+   * 数据响应式中心
+  */
+  /**
+   * 数据事件存放处
+  */
+  class DataEventProxy {
+      constructor() {
+          this.valueMap = new WeakMap();
+      }
+      getProp(target, prop) {
+          if (!this.valueMap.get(target)) {
+              this.valueMap.set(target, {});
+          }
+          let valueTarget = this.valueMap.get(target);
+          if (!valueTarget[prop]) {
+              let propValue = new PropValue(Array.isArray(target[prop]) ? new Proxy(target[prop], {
+                  set(target, prop, value, receiver) {
+                      // 这里一定要先设置再通知
+                      let res = Reflect.set(target, prop, value, receiver);
+                      propValue.notify();
+                      return res;
+                  }
+              }) : target[prop]);
+              valueTarget[prop] = propValue;
+          }
+          return valueTarget[prop];
+      }
+      // 获取用于绑定属性事件的代理对象
+      getEventProxy(target) {
+          return this.valueMap.get(target);
+      }
+      // 设置用于绑定属性事件的代理对象
+      setEventProxy(target, valueTarget) {
+          this.valueMap.set(target, valueTarget);
+      }
+  }
+  /**
+   * 监控数据响应变化处
+  */
+  class DataProxy {
+      constructor(data) {
+          this.target = data;
+          this.dataProxyValue = new DataEventProxy();
+          // 监控普通对象
+          const handler = {
+              get: (target, prop, receiver) => {
+                  if (typeof target[prop] === 'object' && target[prop] !== null && !Array.isArray(target[prop]) && target[prop].constructor === Object) {
+                      return new Proxy(target[prop], handler);
+                  }
+                  else if (typeof target[prop] === 'function') {
+                      return Reflect.get(target, prop, receiver);
+                  }
+                  else {
+                      let propValue = this.dataProxyValue.getProp(target, prop);
+                      for (let depArr of getDepPool()) {
+                          if (!depArr.includes(propValue)) {
+                              depArr.push(propValue);
+                          }
+                      }
+                      return propValue.value;
+                  }
+              },
+              set: (target, prop, value, receiver) => {
+                  if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.constructor === Object) {
+                      // 当对象被替换为新对象时 通知对象里所有的响应式
+                      let valueTarget = this.dataProxyValue.getEventProxy(target[prop]);
+                      let res = Reflect.set(target, prop, value, receiver);
+                      this.replaceProps(value, valueTarget);
+                      return res;
+                  }
+                  else {
+                      let propValue = this.dataProxyValue.getProp(target, prop);
+                      propValue.value = Array.isArray(value) ? new Proxy(value, {
+                          set(target, prop, value, receiver) {
+                              // 这里一定要先设置再通知
+                              let res = Reflect.set(target, prop, value, receiver);
+                              propValue.notify();
+                              return res;
+                          }
+                      }) : value;
+                      let res = Reflect.set(target, prop, value, receiver);
+                      propValue.notify();
+                      return res;
+                  }
+              }
+          };
+          this.data = new Proxy(data, handler);
+      }
+      getData() {
+          return this.data;
+      }
+      getTarget() {
+          return this.target;
+      }
+      getEventProxy() {
+          return this.dataProxyValue;
+      }
+      // 当对象属性被新对象替换时
+      replaceProps(target, valueTarget) {
+          for (let prop in valueTarget) {
+              let propValue = valueTarget[prop];
+              propValue.value = target[prop];
+              propValue.notify();
+          }
+          this.dataProxyValue.setEventProxy(target, valueTarget);
+      }
+  }
+
+  class State {
+      constructor(data, config) {
+          this.dataProxy = new DataProxy(data);
+          this.config = config;
+      }
+      get data() {
+          return this.dataProxy.getData();
+      }
+      // 用于监控数据变化
+      watch(path, fn) {
+          let props = path.split('.');
+          if (!props.length)
+              return;
+          let obj = this.dataProxy.getTarget();
+          let prop = props.shift() || '';
+          while (props.length) {
+              let p = props.shift();
+              if (p) {
+                  obj = obj[prop];
+                  prop = p;
+              }
+          }
+          let events = this.dataProxy.getEventProxy();
+          let propValue = events.getProp(obj, prop);
+          propValue.on('change', fn);
+      }
+  }
+
+  // 获取一个响应式的对象
+  function defineState(data, config) {
+      return new State(data, config);
+  }
+  function mount(selector, rootNode) {
+      let ele = document.querySelector(selector);
+      let rootEle;
+      if (rootNode instanceof Component) {
+          rootEle = rootNode.createElementVNode().createEle();
+      }
+      else if (rootNode instanceof ComponentVNode) {
+          rootEle = rootNode.createComponent().createElementVNode().createEle();
+      }
+      if (ele && rootEle) {
+          if (ele.parentNode) {
+              ele.parentNode.replaceChild(rootEle, ele);
+          }
+      }
+  }
+  function createNode(nodeTag, props, children) {
+      if (typeof nodeTag === 'string') {
+          return new ElementVNode(nodeTag, props, children);
+      }
+      else if (typeof nodeTag === 'function') {
+          return new ComponentVNode(nodeTag, props, children);
+      }
+      else {
+          throw new Error('只能传入字符串或者构造函数');
+      }
+  }
+
+  class Vact {
+      static getDepPool() {
+          return this.depPool;
+      }
+      static runTask(fn) {
+          this.watcherTask.push(fn);
+          if (!this.updating) {
+              this.updating = true;
+              Promise.resolve()
+                  .then(() => {
+                  let callbcak;
+                  while (callbcak = this.watcherTask.shift()) {
+                      callbcak();
+                  }
+              })
+                  .then(() => this.updating = false);
+          }
+      }
+  }
+  Vact.depPool = [];
+  Vact.updating = false;
+  Vact.watcherTask = [];
+  Vact.mount = mount;
+  Vact.createNode = createNode;
+  function getDepPool() {
+      return Vact.getDepPool();
+  }
+  function getDepProps(fn) {
+      let depProps = [];
+      let pool = Vact.getDepPool();
+      pool.push(depProps);
+      let res = fn();
+      pool.splice(pool.indexOf(depProps), 1);
+      return [depProps, res];
+  }
+  function runTask(fn) {
+      Vact.runTask(fn);
+  }
+
   class VNode {
   }
   VNode.ELEMENT = 0;
   VNode.TEXT = 1;
   VNode.COMPONENT = 2;
+  VNode.FRAGMENT = 3;
 
   class ComponentVNode extends VNode {
       constructor(Constructor, props, children) {
@@ -792,7 +972,7 @@
           textNode.createTextNode();
           return textNode;
       }
-      else if (baseNode instanceof ComponentVNode) {
+      else if (baseNode instanceof ComponentVNode) { // render可能返回ElementVNode 也可能返回 ComponentVNode
           baseNode.createComponent().createElementVNode().createEle();
           return baseNode;
       }
@@ -840,185 +1020,6 @@
       childNodes.forEach(child => child.getRNode().remove());
   }
 
-  // 获取一个响应式的对象
-  function defineState(data, config) {
-      return new State(data, config);
-  }
-  function mount(selector, rootNode) {
-      let ele = document.querySelector(selector);
-      let rootEle;
-      if (rootNode instanceof Component) {
-          rootEle = rootNode.createElementVNode().createEle();
-      }
-      else if (rootNode instanceof ComponentVNode) {
-          rootEle = rootNode.createComponent().createElementVNode().createEle();
-      }
-      if (ele && rootEle) {
-          if (ele.parentNode) {
-              ele.parentNode.replaceChild(rootEle, ele);
-          }
-      }
-  }
-  function createNode(nodeTag, props, children) {
-      if (typeof nodeTag === 'string') {
-          return new ElementVNode(nodeTag, props, children);
-      }
-      else if (typeof nodeTag === 'function') {
-          return new ComponentVNode(nodeTag, props, children);
-      }
-      else {
-          throw new Error('只能传入字符串或者构造函数');
-      }
-  }
-
-  class Vact {
-      static getDepPool() {
-          return this.depPool;
-      }
-      static runTask(fn) {
-          this.watcherTask.push(fn);
-          if (!this.updating) {
-              this.updating = true;
-              Promise.resolve()
-                  .then(() => {
-                  let callbcak;
-                  while (callbcak = this.watcherTask.shift()) {
-                      callbcak();
-                  }
-              })
-                  .then(() => this.updating = false);
-          }
-      }
-  }
-  Vact.depPool = [];
-  Vact.updating = false;
-  Vact.watcherTask = [];
-  Vact.mount = mount;
-  Vact.createNode = createNode;
-  function getDepPool() {
-      return Vact.getDepPool();
-  }
-  function getDepProps(fn) {
-      let depProps = [];
-      let pool = Vact.getDepPool();
-      pool.push(depProps);
-      let res = fn();
-      pool.splice(pool.indexOf(depProps), 1);
-      return [depProps, res];
-  }
-  function runTask(fn) {
-      Vact.runTask(fn);
-  }
-
-  /**
-   * 数据响应式中心
-  */
-  /**
-   * 数据事件存放处
-  */
-  class DataEventProxy {
-      constructor() {
-          this.valueMap = new WeakMap();
-      }
-      getProp(target, prop) {
-          if (!this.valueMap.get(target)) {
-              this.valueMap.set(target, {});
-          }
-          let valueTarget = this.valueMap.get(target);
-          if (!valueTarget[prop]) {
-              let propValue = new PropValue(Array.isArray(target[prop]) ? new Proxy(target[prop], {
-                  set(target, prop, value, receiver) {
-                      // 这里一定要先设置再通知
-                      let res = Reflect.set(target, prop, value, receiver);
-                      propValue.notify();
-                      return res;
-                  }
-              }) : target[prop]);
-              valueTarget[prop] = propValue;
-          }
-          return valueTarget[prop];
-      }
-      // 获取用于绑定属性事件的代理对象
-      getEventProxy(target) {
-          return this.valueMap.get(target);
-      }
-      // 设置用于绑定属性事件的代理对象
-      setEventProxy(target, valueTarget) {
-          this.valueMap.set(target, valueTarget);
-      }
-  }
-  /**
-   * 监控数据响应变化处
-  */
-  class DataProxy {
-      constructor(data) {
-          this.target = data;
-          this.dataProxyValue = new DataEventProxy();
-          // 监控普通对象
-          const handler = {
-              get: (target, prop, receiver) => {
-                  if (typeof target[prop] === 'object' && target[prop] !== null && !Array.isArray(target[prop]) && target[prop].constructor === Object) {
-                      return new Proxy(target[prop], handler);
-                  }
-                  else if (typeof target[prop] === 'function') {
-                      return Reflect.get(target, prop, receiver);
-                  }
-                  else {
-                      let propValue = this.dataProxyValue.getProp(target, prop);
-                      for (let depArr of getDepPool()) {
-                          if (!depArr.includes(propValue)) {
-                              depArr.push(propValue);
-                          }
-                      }
-                      return propValue.value;
-                  }
-              },
-              set: (target, prop, value, receiver) => {
-                  if (typeof value === 'object' && value !== null && !Array.isArray(value) && value.constructor === Object) {
-                      // 当对象被替换为新对象时 通知对象里所有的响应式
-                      let valueTarget = this.dataProxyValue.getEventProxy(target[prop]);
-                      let res = Reflect.set(target, prop, value, receiver);
-                      this.replaceProps(value, valueTarget);
-                      return res;
-                  }
-                  else {
-                      let propValue = this.dataProxyValue.getProp(target, prop);
-                      propValue.value = Array.isArray(value) ? new Proxy(value, {
-                          set(target, prop, value, receiver) {
-                              // 这里一定要先设置再通知
-                              let res = Reflect.set(target, prop, value, receiver);
-                              propValue.notify();
-                              return res;
-                          }
-                      }) : value;
-                      let res = Reflect.set(target, prop, value, receiver);
-                      propValue.notify();
-                      return res;
-                  }
-              }
-          };
-          this.data = new Proxy(data, handler);
-      }
-      getData() {
-          return this.data;
-      }
-      getTarget() {
-          return this.target;
-      }
-      getEventProxy() {
-          return this.dataProxyValue;
-      }
-      // 当对象属性被新对象替换时
-      replaceProps(target, valueTarget) {
-          for (let prop in valueTarget) {
-              let propValue = valueTarget[prop];
-              propValue.value = target[prop];
-              propValue.notify();
-          }
-          this.dataProxyValue.setEventProxy(target, valueTarget);
-      }
-  }
-
   class Component {
       constructor(config = {}) {
           this.config = config;
@@ -1034,7 +1035,11 @@
       createElementVNode() {
           if (this.elementVNode)
               return this.elementVNode;
-          return this.elementVNode = this.render(createNode);
+          let renderOut = this.render(createNode);
+          if (renderOut instanceof ComponentVNode) {
+              renderOut = renderOut.createComponent().createElementVNode();
+          }
+          return this.elementVNode = renderOut;
       }
       getElementVNode() {
           return this.elementVNode;

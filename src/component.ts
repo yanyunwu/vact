@@ -42,11 +42,15 @@ export abstract class Component {
     this.children = children
   }
 
-  abstract render(h: (nodeTag: string | SubConstructor, props?: Record<any, any>, children?: any[]) => ElementVNode | ComponentVNode): ElementVNode
+  abstract render(h: (nodeTag: string | SubConstructor, props?: Record<any, any>, children?: any[]) => ElementVNode | ComponentVNode): ElementVNode | ComponentVNode
 
   createElementVNode(): ElementVNode {
     if (this.elementVNode) return this.elementVNode
-    return this.elementVNode = this.render(createNode)
+    let renderOut = this.render(createNode)
+    if (renderOut instanceof ComponentVNode) {
+      renderOut = renderOut.createComponent().createElementVNode()
+    }
+    return this.elementVNode = renderOut
   }
 
   getElementVNode(): ElementVNode {

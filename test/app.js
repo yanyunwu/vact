@@ -287,7 +287,7 @@ class App extends Vact.Component {
 }
  */
 
-class Test extends Vact.Component {
+/* class Test extends Vact.Component {
   constructor() {
     super()
     console.log('被创造');
@@ -306,8 +306,32 @@ function App() {
     h('button', { onClick: () => () => state.data.count++ }, '哈哈哈'),
     () => state.data.count ? span : ''
   ])
+} */
+
+class Test extends Vact.Component {
+  constructor() {
+    super()
+  }
+
+
+  render() {
+    return h('span', {
+      onClick: () => this.props.setNum
+    }, [
+      () => this.children[0],
+      this.children[1]
+    ])
+  }
 }
 
+function App() {
+  let state = Vact.defineState({ count: 0 })
+  let span = h(Test)
+  return h(Test, { setNum: () => () => state.data.count++ }, [
+    () => state.data.count,
+    h(Test, { setNum: () => () => state.data.count += 2 }, [() => state.data.count, null])
+  ])
+}
 
 
 Vact.mount('#app', h(App))

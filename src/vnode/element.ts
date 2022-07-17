@@ -155,7 +155,7 @@ function initVNode(baseNode: BaseChildVNode): ChildVNode {
     let textNode = new TextVNode(baseNode)
     textNode.createTextNode()
     return textNode
-  } else if (baseNode instanceof ComponentVNode) {
+  } else if (baseNode instanceof ComponentVNode) { // render可能返回ElementVNode 也可能返回 ComponentVNode
     baseNode.createComponent().createElementVNode().createEle()
     return baseNode
   } else if (baseNode instanceof ElementVNode) {  // 如果是元素节点
