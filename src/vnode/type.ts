@@ -7,8 +7,8 @@ export type BaseChildVNode = string | ElementVNode | Component | ComponentVNode 
 export type RBaseChildVNode = BaseChildVNode | (() => BaseChildVNode)
 
 export interface SubComponent {
-  createElementVNode(): ElementVNode
+  createEFVNode(): ElementVNode | FragmentVNode
   setProps(props: {}): void
   setChildren(children: any[]): void
-  getElementVNode(): ElementVNode
+  getEFVNode(): ElementVNode | FragmentVNode
 }

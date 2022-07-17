@@ -13,11 +13,24 @@ export class FragmentVNode extends VNode {
   }
   children?: Array<RBaseChildVNode>
   fragment?: HTMLElement
+  VNodeChildren: Array<ChildVNode | ChildVNode[]>
+  pivot: TextVNode // 锚点
 
   constructor(props?: Record<any, any>, children?: any[]) {
     super()
     this.props = props
     this.children = children
+    this.VNodeChildren = []
+    this.pivot = new TextVNode('')
+    this.pivot.createTextNode()
+  }
+
+  getPivot(): TextVNode {
+    return this.pivot
+  }
+
+  setPivot(pivot: TextVNode) {
+    this.pivot = pivot
   }
 
   getRNode(): HTMLElement {
@@ -48,10 +61,11 @@ export class FragmentVNode extends VNode {
     if (!this.fragment || this.children === undefined || this.children === null) return
     if (!Array.isArray(this.children)) this.children = [this.children]
 
-    for (let child of this.children) {
+    for (let i = 0; i < this.children.length; i++) {
+      let child = this.children[i]
       // 如果是函数要先看函数的返回值 不然直接添加
       if (typeof child !== 'function') {
-        setElementChild(this.fragment, initVNodeWithList(child))
+        setElementChild(this.fragment, this.VNodeChildren[i] = initVNodeWithList(child, this))
         continue
       }
 
@@ -60,23 +74,23 @@ export class FragmentVNode extends VNode {
       if (Array.isArray(result)) {
         let pivot = initVNode('');
         setElementChild(this.fragment, pivot)
-        let curNodeList = initVNodeWithList(result) as ChildVNode[]
-        addFragmentEle(this.fragment, curNodeList, pivot as TextVNode)
+        this.VNodeChildren[i] = initVNodeWithList(result, this) as ChildVNode[]
+        addFragmentEle(this.fragment, this.VNodeChildren[i] as ChildVNode[], pivot as TextVNode)
         let fn = () => {
-          removeFragmentEle(curNodeList)
+          removeFragmentEle(this.VNodeChildren[i] as ChildVNode[])
           let newVnodeList = (child as Function)()
           if (Array.isArray(newVnodeList)) {
-            curNodeList = initVNodeWithList(newVnodeList) as ChildVNode[]
-            addFragmentEle(this.getParentMountedEle(), curNodeList, pivot as TextVNode)
+            this.VNodeChildren[i] = initVNodeWithList(newVnodeList, this) as ChildVNode[]
+            addFragmentEle(this.getParentMountedEle(), this.VNodeChildren[i] as ChildVNode[], pivot as TextVNode)
           }
         }
         depProps.forEach(propValue => propValue.setDep(new Watcher(fn)))
       } else {
-        let curNode = initVNode(result)
-        setElementChild(this.fragment, curNode)
+        this.VNodeChildren[i] = initVNode(result, this)
+        setElementChild(this.fragment, this.VNodeChildren[i])
         let fn = () => {
           let newNode = (child as () => BaseChildVNode)()
-          curNode = replaceElementChild(this.getParentMountedEle(), initVNode(newNode), curNode)
+          this.VNodeChildren[i] = replaceElementChild(this.getParentMountedEle(), initVNode(newNode, this), this.VNodeChildren[i] as ChildVNode)
         }
         depProps.forEach(propValue => propValue.setDep(new Watcher(fn)))
       }

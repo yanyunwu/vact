@@ -14,9 +14,19 @@ export function mount(selector: string, rootNode: Component | ComponentVNode) {
   let ele = document.querySelector(selector)
   let rootEle: HTMLElement | undefined
   if (rootNode instanceof Component) {
-    rootEle = rootNode.createElementVNode().createEle()
+    let ef = rootNode.createEFVNode()
+    if (ef instanceof ElementVNode) {
+      rootEle = ef.createEle()
+    } else {
+      throw new Error('用于挂载渲染的根组件必须使用原始标签')
+    }
   } else if (rootNode instanceof ComponentVNode) {
-    rootEle = rootNode.createComponent().createElementVNode().createEle()
+    let ef = rootNode.createComponent().createEFVNode()
+    if (ef instanceof ElementVNode) {
+      rootEle = ef.createEle()
+    } else {
+      throw new Error('用于挂载渲染的根组件必须使用原始标签')
+    }
   }
   if (ele && rootEle) {
     if (ele.parentNode) {

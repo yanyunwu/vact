@@ -107,7 +107,7 @@ export class ComponentVNode extends VNode {
 
   getRNode(): HTMLElement {
     if (this.component instanceof Component) {
-      return this.component.getElementVNode().getRNode()
+      return this.component.getEFVNode().getRNode()
     } else if (this.component instanceof ElementVNode) {
       return this.component.getRNode()
     } else {

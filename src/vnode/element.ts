@@ -143,14 +143,35 @@ export function setElementProp(ele: HTMLElement, prop: string, value: string | R
 
 export function setElementChild(ele: HTMLElement, childNode: ChildVNode | Array<ChildVNode>) {
   if (Array.isArray(childNode)) {
-    childNode.forEach(subChildNode => ele.appendChild(subChildNode.getRNode()))
+    childNode.forEach(subChildNode => {
+      ele.appendChild(subChildNode.getRNode())
+      if (subChildNode instanceof FragmentVNode) {
+        ele.appendChild(subChildNode.getPivot().getRNode())
+      }
+      if (childNode instanceof ComponentVNode) {
+        let ef = childNode.getComponent().getEFVNode()
+        if (ef instanceof FragmentVNode) {
+          ele.appendChild(ef.getPivot().getRNode())
+        }
+      }
+    })
   } else {
     ele.appendChild(childNode.getRNode())
+    if (childNode instanceof FragmentVNode) {
+      ele.appendChild(childNode.getPivot().getRNode())
+    }
+
+    if (childNode instanceof ComponentVNode) {
+      let ef = childNode.getComponent().getEFVNode()
+      if (ef instanceof FragmentVNode) {
+        ele.appendChild(ef.getPivot().getRNode())
+      }
+    }
   }
 }
 
 // 初始化虚拟节点，并生成真实节点
-export function initVNode(baseNode: BaseChildVNode, parent?: ElementVNode): ChildVNode {
+export function initVNode(baseNode: BaseChildVNode, parent?: ElementVNode | FragmentVNode): ChildVNode {
   // 如果是普通的文本字符串
   if (typeof baseNode === "string") {
     let textNode = new TextVNode(baseNode)
@@ -158,7 +179,10 @@ export function initVNode(baseNode: BaseChildVNode, parent?: ElementVNode): Chil
     textNode.createTextNode()
     return textNode
   } else if (baseNode instanceof ComponentVNode) { // render可能返回ElementVNode 也可能返回 ComponentVNode
-    baseNode.createComponent().createElementVNode().createEle()
+    let ef = baseNode.createComponent().createEFVNode()
+    if (ef instanceof ElementVNode) ef.createEle()
+    else ef.createFragment()
+    ef.setParentVNode(parent)
     baseNode.setParentVNode(parent)
     return baseNode
   } else if (baseNode instanceof ElementVNode) {  // 如果是元素节点
@@ -179,7 +203,7 @@ export function initVNode(baseNode: BaseChildVNode, parent?: ElementVNode): Chil
   }
 }
 
-export function initVNodeWithList(baseNode: BaseChildVNode | Array<BaseChildVNode>, parent?: ElementVNode): ChildVNode | Array<ChildVNode> {
+export function initVNodeWithList(baseNode: BaseChildVNode | Array<BaseChildVNode>, parent?: ElementVNode | FragmentVNode): ChildVNode | Array<ChildVNode> {
   if (Array.isArray(baseNode)) {
     return baseNode.map(item => initVNode(item, parent))
   } else {
@@ -196,8 +220,57 @@ export function replaceElementChild(ele: HTMLElement, newNode: ChildVNode, oldNo
     return oldNode
   }
 
+  let newEXNode: ElementVNode | FragmentVNode | TextVNode
+  let oldEXNode: ElementVNode | FragmentVNode | TextVNode
+
+  if (newNode instanceof ComponentVNode) newEXNode = newNode.getComponent().getEFVNode()
+  else newEXNode = newNode
+  if (oldNode instanceof ComponentVNode) oldEXNode = oldNode.getComponent().getEFVNode()
+  else oldEXNode = oldNode
+
+  if (oldEXNode instanceof FragmentVNode) {
+    return replaceToFragmentVNode(ele, newEXNode, oldEXNode)
+  }
+
+  if (newEXNode instanceof FragmentVNode) {
+    return replacedByFragmentVNode(ele, newEXNode, oldEXNode)
+  }
+
   ele.replaceChild(newNode.getRNode(), oldNode.getRNode())
   return newNode
+}
+
+// 替换为FragmentVNode时
+function replaceToFragmentVNode(ele: HTMLElement, newNode: ChildVNode, oldNode: FragmentVNode): ChildVNode {
+  let pivot = oldNode.getPivot()
+  removeFragmentNode(oldNode)
+  ele.insertBefore(newNode.getRNode(), pivot.getRNode())
+  if (newNode instanceof FragmentVNode) {
+    pivot.getRNode().replaceWith(newNode.getPivot().getRNode())
+  } else {
+    pivot.getRNode().remove()
+  }
+  return newNode
+}
+// 被替换为FragmentVNode时
+function replacedByFragmentVNode(ele: HTMLElement, newNode: FragmentVNode, oldNode: ChildVNode): FragmentVNode {
+  let pivot = newNode.getPivot()
+  oldNode.getRNode().replaceWith(pivot.getRNode())
+  ele.insertBefore(newNode.getRNode(), pivot.getRNode())
+  return newNode
+}
+
+// 移除Fragment节点
+function removeFragmentNode(node: FragmentVNode) {
+  node.VNodeChildren.forEach(child => {
+    if (child instanceof FragmentVNode) {
+      removeFragmentNode(child)
+    } else if (Array.isArray(child)) {
+      removeFragmentEle(child)
+    } else {
+      child.getRNode().remove()
+    }
+  })
 }
 
 

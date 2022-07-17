@@ -25,7 +25,7 @@ export abstract class Component {
   // 组件子元素
   children?: any[]
   // 组件挂载的根虚拟节点
-  elementVNode?: ElementVNode
+  efVNode?: ElementVNode | FragmentVNode
   // 类组件标识符
   classComponent!: boolean;
 
@@ -43,19 +43,19 @@ export abstract class Component {
     this.children = children
   }
 
-  abstract render(h: (nodeTag: string | SubConstructor | symbol, props?: Record<any, any>, children?: any[]) => ElementVNode | ComponentVNode | FragmentVNode): ElementVNode | ComponentVNode
+  abstract render(h: (nodeTag: string | SubConstructor | symbol, props?: Record<any, any>, children?: any[]) => ElementVNode | ComponentVNode | FragmentVNode): ElementVNode | ComponentVNode | FragmentVNode
 
-  createElementVNode(): ElementVNode {
-    if (this.elementVNode) return this.elementVNode
+  createEFVNode(): ElementVNode | FragmentVNode {
+    if (this.efVNode) return this.efVNode
     let renderOut = this.render(createNode)
     if (renderOut instanceof ComponentVNode) {
-      renderOut = renderOut.createComponent().createElementVNode()
+      renderOut = renderOut.createComponent().createEFVNode()
     }
-    return this.elementVNode = renderOut
+    return this.efVNode = renderOut
   }
 
-  getElementVNode(): ElementVNode {
-    return this.elementVNode!
+  getEFVNode(): ElementVNode | FragmentVNode {
+    return this.efVNode!
   }
 }
 
