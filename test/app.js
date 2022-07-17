@@ -1,7 +1,7 @@
 var h = Vact.createNode
 
 
-/* class App extends Vact.Component {
+class App extends Vact.Component {
   constructor(props, children) {
     super({
       data: {
@@ -72,7 +72,7 @@ class HelloWorld extends Vact.Component {
       ]
     )
   }
-} */
+}
 
 /* class App extends Vact.Component {
   constructor() {
@@ -284,8 +284,8 @@ class App extends Vact.Component {
       () => this.data.show ? h(Test, null, "ggg1") : ''
     ])
   }
-}
- */
+} */
+
 
 /* class Test extends Vact.Component {
   constructor() {
@@ -335,11 +335,11 @@ function App() {
 
 
 
-function App() {
+/* function App() {
   // console.log(Vact);
   this.data.str = 'uuu'
   return h('div', { onClick: () => () => this.data.str = 'ads' }, h(Vact.Fragment, null, () => this.data.str))
-}
+} */
 
 
 Vact.mount('#app', h(App))

@@ -1,10 +1,20 @@
+declare class TextVNode extends VNode {
+    type: number;
+    text: string;
+    textNode?: Text;
+    constructor(text: string);
+    createTextNode(): Text;
+    getRNode(): HTMLElement | Text;
+}
+
+declare type ChildVNode = ElementVNode | TextVNode | ComponentVNode | FragmentVNode;
 declare type BaseChildVNode = string | ElementVNode | Component | ComponentVNode | FragmentVNode | Array<string | ElementVNode | Component | ComponentVNode | FragmentVNode>;
 declare type RBaseChildVNode = BaseChildVNode | (() => BaseChildVNode);
 interface SubComponent {
-    createElementVNode(): ElementVNode;
+    createEFVNode(): ElementVNode | FragmentVNode;
     setProps(props: {}): void;
     setChildren(children: any[]): void;
-    getElementVNode(): ElementVNode;
+    getEFVNode(): ElementVNode | FragmentVNode;
 }
 
 declare class FragmentVNode extends VNode {
@@ -14,7 +24,11 @@ declare class FragmentVNode extends VNode {
     };
     children?: Array<RBaseChildVNode>;
     fragment?: HTMLElement;
+    VNodeChildren: Array<ChildVNode | ChildVNode[]>;
+    pivot: TextVNode;
     constructor(props?: Record<any, any>, children?: any[]);
+    getPivot(): TextVNode;
+    setPivot(pivot: TextVNode): void;
     getRNode(): HTMLElement;
     getParentMountedEle(): HTMLElement;
     createFragment(): HTMLElement;
@@ -105,14 +119,14 @@ declare abstract class Component {
     data: Record<any, any>;
     props?: Record<any, any>;
     children?: any[];
-    elementVNode?: ElementVNode;
+    efVNode?: ElementVNode | FragmentVNode;
     classComponent: boolean;
     constructor(config?: Config);
     setProps(props: {}): void;
     setChildren(children: any[]): void;
-    abstract render(h: (nodeTag: string | SubConstructor | symbol, props?: Record<any, any>, children?: any[]) => ElementVNode | ComponentVNode | FragmentVNode): ElementVNode | ComponentVNode;
-    createElementVNode(): ElementVNode;
-    getElementVNode(): ElementVNode;
+    abstract render(h: (nodeTag: string | SubConstructor | symbol, props?: Record<any, any>, children?: any[]) => ElementVNode | ComponentVNode | FragmentVNode): ElementVNode | ComponentVNode | FragmentVNode;
+    createEFVNode(): ElementVNode | FragmentVNode;
+    getEFVNode(): ElementVNode | FragmentVNode;
 }
 
 declare class Vact {
