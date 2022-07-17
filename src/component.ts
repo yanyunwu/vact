@@ -44,7 +44,8 @@ export abstract class Component {
 
   abstract render(h: (nodeTag: string | SubConstructor, props?: Record<any, any>, children?: any[]) => ElementVNode | ComponentVNode): ElementVNode
 
-  renderRoot(): ElementVNode {
+  createElementVNode(): ElementVNode {
+    if (this.elementVNode) return this.elementVNode
     return this.elementVNode = this.render(createNode)
   }
 

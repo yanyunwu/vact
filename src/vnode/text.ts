@@ -15,7 +15,7 @@ export class TextVNode extends VNode {
     return this.textNode
   }
 
-  getRVnode(): HTMLElement | Text {
+  getRNode(): HTMLElement | Text {
     return this.textNode!
   }
 }

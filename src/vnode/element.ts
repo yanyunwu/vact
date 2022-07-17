@@ -23,11 +23,12 @@ export class ElementVNode extends VNode {
     this.children = children;
   }
 
-  getRVnode(): HTMLElement {
+  getRNode(): HTMLElement {
     return this.ele!
   }
 
   createEle() {
+    if (this.ele) return // 如果已经初始化过则不要再初始化
     this.ele = document.createElement(this.tag)
     // 处理标签属性
     this.setProps()
@@ -141,9 +142,9 @@ function setElementProp(ele: HTMLElement, prop: string, value: string | Record<s
 
 function setElementChild(ele: HTMLElement, childNode: ChildVNode | Array<ChildVNode>) {
   if (Array.isArray(childNode)) {
-    childNode.forEach(subChildNode => ele.appendChild(subChildNode.getRVnode()))
+    childNode.forEach(subChildNode => ele.appendChild(subChildNode.getRNode()))
   } else {
-    ele.appendChild(childNode.getRVnode())
+    ele.appendChild(childNode.getRNode())
   }
 }
 
@@ -155,7 +156,7 @@ function initVNode(baseNode: BaseChildVNode): ChildVNode {
     textNode.createTextNode()
     return textNode
   } else if (baseNode instanceof ComponentVNode) {
-    baseNode.getComponent().renderRoot().createEle()
+    baseNode.createComponent().createElementVNode().createEle()
     return baseNode
   } else if (baseNode instanceof ElementVNode) {  // 如果是元素节点
     baseNode.createEle()
@@ -182,21 +183,22 @@ function initVNodeWithList(baseNode: BaseChildVNode | Array<BaseChildVNode>): Ch
 */
 function replaceElementChild(ele: HTMLElement, newNode: ChildVNode, oldNode: ChildVNode): ChildVNode {
   if (newNode instanceof TextVNode && oldNode instanceof TextVNode) {
-    oldNode.getRVnode().nodeValue = newNode.getRVnode().nodeValue
+    oldNode.getRNode().nodeValue = newNode.getRNode().nodeValue
     return oldNode
   }
-  ele.replaceChild(newNode.getRVnode(), oldNode.getRVnode())
+
+  ele.replaceChild(newNode.getRNode(), oldNode.getRNode())
   return newNode
 }
 
 
 function addFragmentEle(ele: HTMLElement, childNodes: ChildVNode[], pivot?: TextVNode) {
   let fragment = document.createDocumentFragment()
-  childNodes.forEach(child => fragment.appendChild(child.getRVnode()))
-  if (pivot) ele.insertBefore(fragment, pivot.getRVnode())
+  childNodes.forEach(child => fragment.appendChild(child.getRNode()))
+  if (pivot) ele.insertBefore(fragment, pivot.getRNode())
   else ele.appendChild(fragment)
 }
 
 function removeFragmentEle(childNodes: ChildVNode[]) {
-  childNodes.forEach(child => child.getRVnode().remove())
+  childNodes.forEach(child => child.getRNode().remove())
 }

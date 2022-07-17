@@ -1,11 +1,6 @@
 .DS_Store
 node_modules
-miniprogram_npm
 package-lock.json
-*/dist
-*/platform-bundle
-*/provider-bundle
-server/static
 
 # local env files
 .env.local

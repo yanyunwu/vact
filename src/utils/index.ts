@@ -10,13 +10,11 @@ export function defineState(data: Record<string | number | symbol, any>, config?
 
 export function mount(selector: string, rootNode: Component | ComponentVNode) {
   let ele = document.querySelector(selector)
-  let rootEle: HTMLElement | null = null
+  let rootEle: HTMLElement | undefined
   if (rootNode instanceof Component) {
-    rootEle = rootNode.renderRoot().createEle()
-  } else {
-    let component = rootNode.getComponent()
-    if (component instanceof Component) rootEle = component.renderRoot().createEle()
-    else if (component instanceof ElementVNode) rootEle = component.createEle()
+    rootEle = rootNode.createElementVNode().createEle()
+  } else if (rootNode instanceof ComponentVNode) {
+    rootEle = rootNode.createComponent().createElementVNode().createEle()
   }
   if (ele && rootEle) {
     if (ele.parentNode) {

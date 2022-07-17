@@ -1,4 +1,4 @@
-
+var h = Vact.createNode
 
 
 /* class App extends Vact.Component {
@@ -265,7 +265,7 @@ let Test = (props, children) => {
   return Vact.createNode('button', { onClick: () => props.onClick }, children[0])
 } */
 
-let Test = (props, children) => {
+/* let Test = (props, children) => {
   return Vact.createNode('button', null, children[0])
 }
 
@@ -285,8 +285,29 @@ class App extends Vact.Component {
     ])
   }
 }
+ */
+
+class Test extends Vact.Component {
+  constructor() {
+    super()
+    console.log('被创造');
+  }
+
+
+  render() {
+    return h('span', null, '哈哈哈')
+  }
+}
+
+function App() {
+  let state = Vact.defineState({ count: 0 })
+  let span = h(Test)
+  return h('div', { style: 'dasd' }, [
+    h('button', { onClick: () => () => state.data.count++ }, '哈哈哈'),
+    () => state.data.count ? span : ''
+  ])
+}
 
 
 
-
-Vact.mount('#app', Vact.h(App))
+Vact.mount('#app', h(App))

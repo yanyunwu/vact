@@ -38,7 +38,8 @@ export class ComponentVNode extends VNode {
     // 在初始化内部一定不要调用init
   }
 
-  init() {
+  createComponent(): SubComponent {
+    if (this.component) return this.component;
     // 处理自定义组件的属性
     let props: Record<any, any> = new DataProxy({}).getData()
     for (let prop in this.props) {
@@ -96,23 +97,21 @@ export class ComponentVNode extends VNode {
 
     this.component.setProps(props)
     this.component.setChildren(children)
-
+    return this.component
   }
 
   getComponent(): SubComponent {
-    this.init()
     return this.component!
   }
 
 
-  getRVnode(): HTMLElement {
+  getRNode(): HTMLElement {
     if (this.component instanceof Component) {
-      return this.component.getElementVNode().getRVnode()
+      return this.component.getElementVNode().getRNode()
     } else if (this.component instanceof ElementVNode) {
-      return this.component.getRVnode()
+      return this.component.getRNode()
     } else {
       throw new Error('组件初始化')
     }
   }
-
 }
