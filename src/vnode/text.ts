@@ -1,6 +1,8 @@
 import { replaceNode, standardNode, ChildVNode } from "../children"
 import { PropValue, Watcher } from "../value"
 import { VNode } from "./baseNode"
+import { ComponentVNode } from "./component"
+import { FragmentVNode } from "./fragment"
 
 export class TextVNode extends VNode {
   type: number = VNode.TEXT
@@ -31,7 +33,22 @@ export class TextVNode extends VNode {
       node.textNode = this.textNode
       return
     }
-    this.parentVNode?.getRNode().replaceChild(node.getRNode(), this.getRNode())
+
+    if (node instanceof FragmentVNode) {
+      this.parentVNode?.getRNode().insertBefore(node.getRNode(), this.getRNode())
+      this.getRNode().replaceWith(node.pivot.getRNode())
+    } else if (node instanceof ComponentVNode) {
+      let ef = node.getComponent().getEFVNode()
+      if (ef instanceof FragmentVNode) {
+        this.parentVNode?.getRNode().insertBefore(node.getRNode(), this.getRNode())
+        this.getRNode().replaceWith(ef.pivot.getRNode())
+      } else {
+        this.parentVNode?.getRNode().replaceChild(node.getRNode(), this.getRNode())
+      }
+    }
+    else {
+      this.parentVNode?.getRNode().replaceChild(node.getRNode(), this.getRNode())
+    }
   }
 
   remove() {

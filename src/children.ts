@@ -21,7 +21,7 @@ export function setNodeChildren(parentNode: ParentVNode, children: Array<RBaseCh
     if (typeof child !== 'function') {
       let snode = standardNode(child, parentNode)
       snode.createRNode() // 创建真实节点
-      standardNodeList.push(standardNode(child, parentNode))
+      standardNodeList.push(snode)
       snode.mount() // 将真实节点挂载到父节点
       continue
     }

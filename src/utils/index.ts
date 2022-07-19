@@ -13,18 +13,14 @@ export function defineState(data: Record<string | number | symbol, any>, config?
 export function mount(selector: string, rootNode: Component | ComponentVNode) {
   let ele = document.querySelector(selector)
   let rootEle: HTMLElement | undefined
+
   if (rootNode instanceof Component) {
     let ef = rootNode.createEFVNode()
-    if (ef instanceof ElementVNode) {
-      rootEle = ef.createEle()
-    } else {
-      throw new Error('用于挂载渲染的根组件必须使用原始标签')
-    }
+    ef.createRNode()
+    rootEle = ef.getRNode()
   } else if (rootNode instanceof ComponentVNode) {
     rootNode.createRNode()
     rootEle = rootNode.getRNode()
-    // console.log(rootNode);
-
   }
   if (ele && rootEle) {
     if (ele.parentNode) {

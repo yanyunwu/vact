@@ -140,7 +140,21 @@ export class ElementVNode extends VNode {
   }
 
   replaceWith(node: ChildVNode) {
-    this.parentVNode?.getRNode().replaceChild(node.getRNode(), this.getRNode())
+    if (node instanceof FragmentVNode) {
+      this.parentVNode?.getRNode().insertBefore(node.getRNode(), this.getRNode())
+      this.getRNode().replaceWith(node.pivot.getRNode())
+    } else if (node instanceof ComponentVNode) {
+      let ef = node.getComponent().getEFVNode()
+      if (ef instanceof FragmentVNode) {
+        this.parentVNode?.getRNode().insertBefore(node.getRNode(), this.getRNode())
+        this.getRNode().replaceWith(ef.pivot.getRNode())
+      } else {
+        this.parentVNode?.getRNode().replaceChild(node.getRNode(), this.getRNode())
+      }
+    }
+    else {
+      this.parentVNode?.getRNode().replaceChild(node.getRNode(), this.getRNode())
+    }
   }
 
   remove() {

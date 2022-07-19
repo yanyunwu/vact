@@ -663,7 +663,7 @@
           if (typeof child !== 'function') {
               let snode = standardNode(child, parentNode);
               snode.createRNode(); // 创建真实节点
-              standardNodeList.push(standardNode(child, parentNode));
+              standardNodeList.push(snode);
               snode.mount(); // 将真实节点挂载到父节点
               continue;
           }
@@ -747,6 +747,123 @@
   VNode.COMPONENT = 2;
   VNode.FRAGMENT = 3;
 
+  class ComponentVNode extends VNode {
+      constructor(Constructor, props, children) {
+          super();
+          this.type = VNode.COMPONENT;
+          this.Constructor = Constructor;
+          this.props = props || {};
+          if (Array.isArray(children)) {
+              this.children = children;
+          }
+          else {
+              if (children !== undefined && children !== null) {
+                  this.children = [children];
+              }
+              else {
+                  this.children = [];
+              }
+          }
+          // 在初始化内部一定不要调用init
+      }
+      setComponentProps() {
+          // 处理自定义组件的属性
+          let props = new DataProxy({}).getData();
+          for (let prop in this.props) {
+              // 如果属性不为函数则不需要设置响应式
+              if (typeof this.props[prop] !== 'function') {
+                  props[prop] = this.props[prop];
+                  continue;
+              }
+              let [depProps, result] = getDepProps(this.props[prop]);
+              if (typeof result === 'function') {
+                  props[prop] = result;
+              }
+              else {
+                  props[prop] = result;
+                  let fn = () => props[prop] = this.props[prop]();
+                  depProps.forEach(item => {
+                      item.setDep(new Watcher(fn));
+                  });
+              }
+          }
+          return props;
+      }
+      setComponentChildren() {
+          let children = new DataProxy([]).getData();
+          if (this.children) {
+              for (let i = 0; i < this.children.length; i++) {
+                  if (typeof this.children[i] !== 'function') {
+                      children[i] = this.children[i];
+                      continue;
+                  }
+                  let [depProps, result] = getDepProps(this.children[i]);
+                  if (typeof result === 'function') {
+                      children[i] = result;
+                  }
+                  else {
+                      children[i] = result;
+                      let fn = () => children[i] = this.children[i]();
+                      depProps.forEach(item => {
+                          item.setDep(new Watcher(fn));
+                      });
+                  }
+              }
+          }
+          return children;
+      }
+      getComponent() {
+          return this.component;
+      }
+      getRNode() {
+          // if (this.component instanceof Component) {
+          //   return this.component.getEFVNode().getRNode()
+          // } else if (this.component instanceof ElementVNode) {
+          //   return this.component.getRNode()
+          // } else {
+          //   throw new Error('组件初始化')
+          // }
+          return this.component.getEFVNode().getRNode();
+      }
+      // 创建并初始化真实节点
+      createRNode() {
+          if (this.component)
+              return; // 如果已经初始化过则不要再初始化
+          let Constructor = this.Constructor;
+          if (Constructor.prototype && Constructor.prototype.classComponent) {
+              this.component = new Constructor();
+          }
+          else {
+              let funComponent = new FunComponent();
+              funComponent.setRenderFun(Constructor);
+              this.component = funComponent;
+          }
+          this.component.setProps(this.setComponentProps());
+          this.component.setChildren(this.setComponentChildren());
+          let ef = this.component.createEFVNode();
+          // 先设置父元素
+          ef.setParentVNode(this.parentVNode);
+          ef.createRNode();
+      }
+      mount() {
+          this.getComponent().getEFVNode().mount();
+      }
+      replaceWith(node) {
+          let ef = this.getComponent().getEFVNode();
+          ef.replaceWith(node);
+      }
+      remove() {
+          var _a;
+          let ef = (_a = this.component) === null || _a === void 0 ? void 0 : _a.getEFVNode();
+          if (ef instanceof ElementVNode) {
+              ef.remove();
+          }
+          else {
+              ef === null || ef === void 0 ? void 0 : ef.remove();
+          }
+      }
+  }
+
   class TextVNode extends VNode {
       constructor(text) {
           super();
@@ -765,13 +882,29 @@
           (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().appendChild(this.getRNode());
       }
       replaceWith(node) {
-          var _a;
+          var _a, _b, _c, _d;
           if (node instanceof TextVNode) {
               this.getRNode().nodeValue = node.getRNode().nodeValue;
               node.textNode = this.textNode;
               return;
           }
-          (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().replaceChild(node.getRNode(), this.getRNode());
+          if (node instanceof FragmentVNode) {
+              (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().insertBefore(node.getRNode(), this.getRNode());
+              this.getRNode().replaceWith(node.pivot.getRNode());
+          }
+          else if (node instanceof ComponentVNode) {
+              let ef = node.getComponent().getEFVNode();
+              if (ef instanceof FragmentVNode) {
+                  (_b = this.parentVNode) === null || _b === void 0 ? void 0 : _b.getRNode().insertBefore(node.getRNode(), this.getRNode());
+                  this.getRNode().replaceWith(ef.pivot.getRNode());
+              }
+              else {
+                  (_c = this.parentVNode) === null || _c === void 0 ? void 0 : _c.getRNode().replaceChild(node.getRNode(), this.getRNode());
+              }
+          }
+          else {
+              (_d = this.parentVNode) === null || _d === void 0 ? void 0 : _d.getRNode().replaceChild(node.getRNode(), this.getRNode());
+          }
       }
       remove() {
           var _a;
@@ -885,17 +1018,12 @@
       let rootEle;
       if (rootNode instanceof Component) {
           let ef = rootNode.createEFVNode();
-          if (ef instanceof ElementVNode) {
-              rootEle = ef.createEle();
-          }
-          else {
-              throw new Error('用于挂载渲染的根组件必须使用原始标签');
-          }
+          ef.createRNode();
+          rootEle = ef.getRNode();
       }
       else if (rootNode instanceof ComponentVNode) {
           rootNode.createRNode();
           rootEle = rootNode.getRNode();
-          // console.log(rootNode);
       }
       if (ele && rootEle) {
           if (ele.parentNode) {
@@ -1074,8 +1202,24 @@
           (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().appendChild(this.getRNode());
       }
       replaceWith(node) {
-          var _a;
-          (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().replaceChild(node.getRNode(), this.getRNode());
+          var _a, _b, _c, _d;
+          if (node instanceof FragmentVNode) {
+              (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().insertBefore(node.getRNode(), this.getRNode());
+              this.getRNode().replaceWith(node.pivot.getRNode());
+          }
+          else if (node instanceof ComponentVNode) {
+              let ef = node.getComponent().getEFVNode();
+              if (ef instanceof FragmentVNode) {
+                  (_b = this.parentVNode) === null || _b === void 0 ? void 0 : _b.getRNode().insertBefore(node.getRNode(), this.getRNode());
+                  this.getRNode().replaceWith(ef.pivot.getRNode());
+              }
+              else {
+                  (_c = this.parentVNode) === null || _c === void 0 ? void 0 : _c.getRNode().replaceChild(node.getRNode(), this.getRNode());
+              }
+          }
+          else {
+              (_d = this.parentVNode) === null || _d === void 0 ? void 0 : _d.getRNode().replaceChild(node.getRNode(), this.getRNode());
+          }
       }
       remove() {
           var _a;
@@ -1248,123 +1392,6 @@
   // export function removeFragmentEle(childNodes: ChildVNode[]) {
   //   childNodes.forEach(child => child.getRNode().remove())
   // }
-
-  class ComponentVNode extends VNode {
-      constructor(Constructor, props, children) {
-          super();
-          this.type = VNode.COMPONENT;
-          this.Constructor = Constructor;
-          this.props = props || {};
-          if (Array.isArray(children)) {
-              this.children = children;
-          }
-          else {
-              if (children !== undefined && children !== null) {
-                  this.children = [children];
-              }
-              else {
-                  this.children = [];
-              }
-          }
-          // 在初始化内部一定不要调用init
-      }
-      setComponentProps() {
-          // 处理自定义组件的属性
-          let props = new DataProxy({}).getData();
-          for (let prop in this.props) {
-              // 如果属性不为函数则不需要设置响应式
-              if (typeof this.props[prop] !== 'function') {
-                  props[prop] = this.props[prop];
-                  continue;
-              }
-              let [depProps, result] = getDepProps(this.props[prop]);
-              if (typeof result === 'function') {
-                  props[prop] = result;
-              }
-              else {
-                  props[prop] = result;
-                  let fn = () => props[prop] = this.props[prop]();
-                  depProps.forEach(item => {
-                      item.setDep(new Watcher(fn));
-                  });
-              }
-          }
-          return props;
-      }
-      setComponentChildren() {
-          let children = new DataProxy([]).getData();
-          if (this.children) {
-              for (let i = 0; i < this.children.length; i++) {
-                  if (typeof this.children[i] !== 'function') {
-                      children[i] = this.children[i];
-                      continue;
-                  }
-                  let [depProps, result] = getDepProps(this.children[i]);
-                  if (typeof result === 'function') {
-                      children[i] = result;
-                  }
-                  else {
-                      children[i] = result;
-                      let fn = () => children[i] = this.children[i]();
-                      depProps.forEach(item => {
-                          item.setDep(new Watcher(fn));
-                      });
-                  }
-              }
-          }
-          return children;
-      }
-      getComponent() {
-          return this.component;
-      }
-      getRNode() {
-          // if (this.component instanceof Component) {
-          //   return this.component.getEFVNode().getRNode()
-          // } else if (this.component instanceof ElementVNode) {
-          //   return this.component.getRNode()
-          // } else {
-          //   throw new Error('组件初始化')
-          // }
-          return this.component.getEFVNode().getRNode();
-      }
-      // 创建并初始化真实节点
-      createRNode() {
-          if (this.component)
-              return; // 如果已经初始化过则不要再初始化
-          let Constructor = this.Constructor;
-          if (Constructor.prototype && Constructor.prototype.classComponent) {
-              this.component = new Constructor();
-          }
-          else {
-              let funComponent = new FunComponent();
-              funComponent.setRenderFun(Constructor);
-              this.component = funComponent;
-          }
-          this.component.setProps(this.setComponentProps());
-          this.component.setChildren(this.setComponentChildren());
-          let ef = this.component.createEFVNode();
-          ef.createRNode();
-          ef.setParentVNode(this.parentVNode);
-      }
-      mount() {
-          var _a;
-          (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().appendChild(this.getRNode());
-      }
-      replaceWith(node) {
-          let ef = this.getComponent().getEFVNode();
-          ef.replaceWith(node);
-      }
-      remove() {
-          var _a;
-          let ef = (_a = this.component) === null || _a === void 0 ? void 0 : _a.getEFVNode();
-          if (ef instanceof ElementVNode) {
-              ef.remove();
-          }
-          else {
-              ef === null || ef === void 0 ? void 0 : ef.remove();
-          }
-      }
-  }
 
   class Component {
       constructor(config = {}) {

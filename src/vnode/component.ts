@@ -125,12 +125,13 @@ export class ComponentVNode extends VNode {
     this.component.setChildren(this.setComponentChildren())
 
     let ef = this.component.createEFVNode()
-    ef.createRNode()
+    // 先设置父元素
     ef.setParentVNode(this.parentVNode)
+    ef.createRNode()
   }
 
   mount() {
-    this.parentVNode?.getRNode().appendChild(this.getRNode())
+    this.getComponent().getEFVNode().mount()
   }
 
   replaceWith(node: ChildVNode) {

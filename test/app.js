@@ -339,10 +339,25 @@ function App() {
 
 
 
-function App() {
-  // console.log(Vact);
-  this.data.str = 'uuu'
-  return h('div', { onClick: () => () => this.data.str = 'ads' }, h(Vact.Fragment, null, () => this.data.str))
+// function App() {
+//   // console.log(Vact);
+//   // this.data.show = true
+//   return h('div', { onClick: () => () => this.data.show = !this.data.show }, [
+//     () => 1 ? h(Test) : 'qwe'
+//   ])
+// }
+
+class App extends Vact.Component {
+  render() {
+    this.data.show = true
+    return h('div', { onClick: () => () => this.data.show = !this.data.show }, [
+      () => this.data.show ? h('span', null, 'qwe') : h(Test)
+    ])
+  }
+}
+
+function Test() {
+  return h(Vact.Fragment, null, 'ewq')
 }
 
 
