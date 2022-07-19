@@ -29,7 +29,16 @@ export function setNodeChildren(parentNode: ParentVNode, children: Array<RBaseCh
     let [propValues, result] = getDepProps(child)
     let snode = standardNode(result, parentNode)
     snode.createRNode() // 创建真实节点
-    snode.setDeps(propValues, child)
+
+    standardNodeList[i] = snode
+    let fn = () => {
+      let nextNode = standardNode((child as () => BaseChildVNode)(), parentNode)
+      nextNode.createRNode()
+      replaceNode(nextNode, standardNodeList[i])
+      standardNodeList[i] = nextNode
+    }
+
+    snode.setDeps(propValues, fn)
     snode.bindDeps()
     snode.mount() // 将真实节点挂载到父节点
     standardNodeList.push(snode)

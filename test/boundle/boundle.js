@@ -670,7 +670,14 @@
           let [propValues, result] = getDepProps(child);
           let snode = standardNode(result, parentNode);
           snode.createRNode(); // 创建真实节点
-          snode.setDeps(propValues, child);
+          standardNodeList[i] = snode;
+          let fn = () => {
+              let nextNode = standardNode(child(), parentNode);
+              nextNode.createRNode();
+              replaceNode(nextNode, standardNodeList[i]);
+              standardNodeList[i] = nextNode;
+          };
+          snode.setDeps(propValues, fn);
           snode.bindDeps();
           snode.mount(); // 将真实节点挂载到父节点
           standardNodeList.push(snode);
@@ -730,14 +737,14 @@
       // 绑定节点的依赖
       bindDeps() {
           if (this.propValues && this.fn) {
-              let curMountedNode = this;
-              let fn = () => {
-                  let nextNode = standardNode(this.fn(), this.parentVNode);
-                  nextNode.createRNode();
-                  replaceNode(nextNode, curMountedNode);
-                  curMountedNode = nextNode;
-              };
-              let watcher = new Watcher(fn);
+              // let curMountedNode: ChildVNode = this as unknown as ChildVNode
+              // let fn = () => {
+              //   let nextNode = standardNode(this.fn!(), this.parentVNode)
+              //   nextNode.createRNode()
+              //   replaceNode(nextNode, curMountedNode)
+              //   curMountedNode = nextNode
+              // }
+              let watcher = new Watcher(this.fn);
               this.propValues.forEach(propValue => propValue.setDep(watcher));
           }
       }
@@ -858,8 +865,8 @@
           if (ef instanceof ElementVNode) {
               ef.remove();
           }
-          else {
-              ef === null || ef === void 0 ? void 0 : ef.remove();
+          else if (ef instanceof FragmentVNode) {
+              ef.remove();
           }
       }
   }
@@ -912,51 +919,6 @@
       }
   }
 
-  class ArrayVNode extends VNode {
-      constructor(props, bnodeList) {
-          super();
-          this.type = 8;
-          this.props = props;
-          this.bnodeList = bnodeList;
-          this.nodeList = [];
-          this.pivot = new TextVNode('');
-          this.pivot.createRNode();
-      }
-      setParentVNode(parent) {
-          this.parentVNode = parent;
-      }
-      getRNode() {
-          return this.fragment;
-      }
-      // 创建并初始化真实节点
-      createRNode() {
-          this.fragment = document.createDocumentFragment();
-          this.bnodeList.forEach(child => {
-              let schild = standardNode(child, this.parentVNode, false);
-              schild.createRNode();
-              this.nodeList.push(schild);
-              this.fragment.appendChild(schild.getRNode());
-          });
-      }
-      mount() {
-          var _a, _b;
-          (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().appendChild(this.getRNode());
-          (_b = this.parentVNode) === null || _b === void 0 ? void 0 : _b.getRNode().appendChild(this.pivot.getRNode());
-      }
-      replaceWith(node) {
-          var _a;
-          if (node instanceof ArrayVNode) {
-              this.nodeList.forEach(child => child.getRNode().remove());
-              (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().insertBefore(node.getRNode(), this.pivot.getRNode());
-              node.pivot = this.pivot;
-          }
-      }
-      // 移除自身节点的方法
-      remove() {
-          this.nodeList.forEach(node => node.remove());
-      }
-  }
-
   class FragmentVNode extends VNode {
       constructor(props, children) {
           super();
@@ -997,8 +959,14 @@
           var _a;
           this.remove();
           (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().insertBefore(node.getRNode(), this.pivot.getRNode());
-          if (node instanceof FragmentVNode || node instanceof ArrayVNode) {
+          if (node instanceof FragmentVNode) {
               node.pivot = this.pivot;
+          }
+          else if (node instanceof ComponentVNode) {
+              let ef = node.getComponent().getEFVNode();
+              if (ef instanceof FragmentVNode) {
+                  ef.pivot = this.pivot;
+              }
           }
           else {
               this.pivot.remove();
@@ -1202,7 +1170,7 @@
           (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().appendChild(this.getRNode());
       }
       replaceWith(node) {
-          var _a, _b, _c, _d;
+          var _a, _b, _c;
           if (node instanceof FragmentVNode) {
               (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().insertBefore(node.getRNode(), this.getRNode());
               this.getRNode().replaceWith(node.pivot.getRNode());
@@ -1218,7 +1186,12 @@
               }
           }
           else {
-              (_d = this.parentVNode) === null || _d === void 0 ? void 0 : _d.getRNode().replaceChild(node.getRNode(), this.getRNode());
+              if (this.parentVNode) {
+                  let children = Array.from(this.parentVNode.getRNode().children);
+                  if (children.includes(this.getRNode())) {
+                      this.parentVNode.getRNode().replaceChild(node.getRNode(), this.getRNode());
+                  }
+              }
           }
       }
       remove() {
@@ -1392,6 +1365,51 @@
   // export function removeFragmentEle(childNodes: ChildVNode[]) {
   //   childNodes.forEach(child => child.getRNode().remove())
   // }
+
+  class ArrayVNode extends VNode {
+      constructor(props, bnodeList) {
+          super();
+          this.type = 8;
+          this.props = props;
+          this.bnodeList = bnodeList;
+          this.nodeList = [];
+          this.pivot = new TextVNode('');
+          this.pivot.createRNode();
+      }
+      setParentVNode(parent) {
+          this.parentVNode = parent;
+      }
+      getRNode() {
+          return this.fragment;
+      }
+      // 创建并初始化真实节点
+      createRNode() {
+          this.fragment = document.createDocumentFragment();
+          this.bnodeList.forEach(child => {
+              let schild = standardNode(child, this.parentVNode, false);
+              schild.createRNode();
+              this.nodeList.push(schild);
+              this.fragment.appendChild(schild.getRNode());
+          });
+      }
+      mount() {
+          var _a, _b;
+          (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().appendChild(this.getRNode());
+          (_b = this.parentVNode) === null || _b === void 0 ? void 0 : _b.getRNode().appendChild(this.pivot.getRNode());
+      }
+      replaceWith(node) {
+          var _a;
+          if (node instanceof ArrayVNode) {
+              this.nodeList.forEach(child => child.getRNode().remove());
+              (_a = this.parentVNode) === null || _a === void 0 ? void 0 : _a.getRNode().insertBefore(node.getRNode(), this.pivot.getRNode());
+              node.pivot = this.pivot;
+          }
+      }
+      // 移除自身节点的方法
+      remove() {
+          this.nodeList.forEach(node => node.remove());
+      }
+  }
 
   class Component {
       constructor(config = {}) {

@@ -6,6 +6,7 @@ import { VNode } from "./baseNode"
 import { SubComponent } from "./type"
 import { ElementVNode } from "./element"
 import { ChildVNode, replaceNode, standardNode } from "../children"
+import { FragmentVNode } from "./fragment"
 
 /**
  * 组件节点
@@ -143,8 +144,8 @@ export class ComponentVNode extends VNode {
     let ef = this.component?.getEFVNode()
     if (ef instanceof ElementVNode) {
       ef.remove()
-    } else {
-      ef?.remove()
+    } else if (ef instanceof FragmentVNode) {
+      ef.remove()
     }
   }
 }

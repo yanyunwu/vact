@@ -6,6 +6,7 @@ import { VNode } from "./baseNode";
 import { TextVNode } from "./text";
 import { ChildVNode, RBaseChildVNode } from "../children";
 import { ArrayVNode } from "./arrayNode";
+import { ComponentVNode } from "./component";
 
 
 export class FragmentVNode extends VNode {
@@ -41,7 +42,6 @@ export class FragmentVNode extends VNode {
     this.VNodeChildren = setNodeChildren(this.parentVNode!, this.children)
   }
 
-
   // 创建并初始化真实节点
   createRNode(): void {
     if (this.fragment) return // 如果已经初始化过则不要再初始化
@@ -58,9 +58,15 @@ export class FragmentVNode extends VNode {
   replaceWith(node: ChildVNode) {
     this.remove()
     this.parentVNode?.getRNode().insertBefore(node.getRNode(), this.pivot.getRNode())
-    if (node instanceof FragmentVNode || node instanceof ArrayVNode) {
+    if (node instanceof FragmentVNode) {
       node.pivot = this.pivot
-    } else {
+    } else if (node instanceof ComponentVNode) {
+      let ef = node.getComponent().getEFVNode()
+      if (ef instanceof FragmentVNode) {
+        ef.pivot = this.pivot
+      }
+    }
+    else {
       this.pivot.remove()
     }
   }

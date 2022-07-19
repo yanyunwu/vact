@@ -351,13 +351,13 @@ class App extends Vact.Component {
   render() {
     this.data.show = true
     return h('div', { onClick: () => () => this.data.show = !this.data.show }, [
-      () => this.data.show ? h('span', null, 'qwe') : h(Test)
+      () => this.data.show ? h(Test, null, 'ewq') : h(Test, null, 'qwe')
     ])
   }
 }
 
-function Test() {
-  return h(Vact.Fragment, null, 'ewq')
+function Test(props, children) {
+  return h(Vact.Fragment, null, children[0])
 }
 
 

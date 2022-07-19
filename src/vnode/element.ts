@@ -153,7 +153,12 @@ export class ElementVNode extends VNode {
       }
     }
     else {
-      this.parentVNode?.getRNode().replaceChild(node.getRNode(), this.getRNode())
+      if (this.parentVNode) {
+        let children = Array.from(this.parentVNode.getRNode().children)
+        if (children.includes(this.getRNode())) {
+          this.parentVNode.getRNode().replaceChild(node.getRNode(), this.getRNode())
+        }
+      }
     }
   }
 

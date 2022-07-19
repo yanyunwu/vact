@@ -26,11 +26,11 @@ export abstract class VNode {
   // 节点依赖的属性
   propValues?: Array<PropValue>
   // 节点的生成函数
-  fn?: Function
+  fn?: () => void
   abstract createRNode(): void
 
   // 设置节点的依赖
-  setDeps(propValues: Array<PropValue>, fn: Function): void {
+  setDeps(propValues: Array<PropValue>, fn: () => void): void {
     this.propValues = propValues
     this.fn = fn
   }
@@ -38,14 +38,14 @@ export abstract class VNode {
   // 绑定节点的依赖
   bindDeps(): void {
     if (this.propValues && this.fn) {
-      let curMountedNode: ChildVNode = this as unknown as ChildVNode
-      let fn = () => {
-        let nextNode = standardNode(this.fn!(), this.parentVNode)
-        nextNode.createRNode()
-        replaceNode(nextNode, curMountedNode)
-        curMountedNode = nextNode
-      }
-      let watcher = new Watcher(fn)
+      // let curMountedNode: ChildVNode = this as unknown as ChildVNode
+      // let fn = () => {
+      //   let nextNode = standardNode(this.fn!(), this.parentVNode)
+      //   nextNode.createRNode()
+      //   replaceNode(nextNode, curMountedNode)
+      //   curMountedNode = nextNode
+      // }
+      let watcher = new Watcher(this.fn)
       this.propValues.forEach(propValue => propValue.setDep(watcher))
     }
   }
