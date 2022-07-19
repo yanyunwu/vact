@@ -1,8 +1,6 @@
-import { BaseChildVNode, ChildVNode, replaceNode, standardNode } from "../children"
+import { ChildVNode } from "../children"
 import { PropValue, Watcher } from "../value"
 import { ElementVNode } from "./element"
-import { FragmentVNode } from "./fragment"
-import { TextVNode } from "./text"
 
 export abstract class VNode {
   // 父虚拟结点

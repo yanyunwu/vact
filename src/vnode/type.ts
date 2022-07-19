@@ -1,7 +1,5 @@
-import { SlotVNode } from "./slot"
-import { TextVNode, ElementVNode, ComponentVNode } from "../vnode"
+import { ElementVNode } from "../vnode"
 import { FragmentVNode } from "./fragment"
-import { ArrayVNode } from "./arrayNode"
 
 // 这里指的是能渲染元素的parentNode
 // type ParentVNode = ElementVNode | FragmentVNode

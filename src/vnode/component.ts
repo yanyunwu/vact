@@ -1,11 +1,11 @@
-import { Component, FunComponent } from "../component"
+import { FunComponent } from "../component"
 import { getDepProps } from "../application"
 import { DataProxy } from "../proxy"
-import { PropValue, Watcher } from "../value"
+import { Watcher } from "../value"
 import { VNode } from "./baseNode"
 import { SubComponent } from "./type"
 import { ElementVNode } from "./element"
-import { ChildVNode, replaceNode, standardNode } from "../children"
+import { ChildVNode } from "../children"
 import { FragmentVNode } from "./fragment"
 
 /**

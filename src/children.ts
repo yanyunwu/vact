@@ -1,4 +1,3 @@
-import { type } from "os"
 import { getDepProps } from "./application"
 import { TextVNode, ElementVNode, ComponentVNode, FragmentVNode, SlotVNode, ArrayVNode } from "./vnode"
 
@@ -12,6 +11,9 @@ export type ChildVNode = TextVNode | ElementVNode | ComponentVNode | FragmentVNo
 export type BaseChildVNode = string | ElementVNode | ComponentVNode | FragmentVNode | ArrayVNode | Array<string | ElementVNode | ComponentVNode | FragmentVNode>
 export type RBaseChildVNode = BaseChildVNode | (() => BaseChildVNode)
 
+/**
+ * 处理子节点的添加
+*/
 
 export function setNodeChildren(parentNode: ParentVNode, children: Array<RBaseChildVNode>): Array<ChildVNode> {
   let standardNodeList: Array<ChildVNode> = []
