@@ -49,7 +49,10 @@ export abstract class Component {
     if (this.efVNode) return this.efVNode
     let renderOut = this.render(createNode)
     if (renderOut instanceof ComponentVNode) {
-      renderOut = renderOut.createComponent().createEFVNode()
+      // renderOut = renderOut.createComponent().createEFVNode()
+      renderOut.createRNode()
+      let com = renderOut.getComponent()
+      renderOut = com.getEFVNode()
     }
     return this.efVNode = renderOut
   }

@@ -21,12 +21,10 @@ export function mount(selector: string, rootNode: Component | ComponentVNode) {
       throw new Error('用于挂载渲染的根组件必须使用原始标签')
     }
   } else if (rootNode instanceof ComponentVNode) {
-    let ef = rootNode.createComponent().createEFVNode()
-    if (ef instanceof ElementVNode) {
-      rootEle = ef.createEle()
-    } else {
-      throw new Error('用于挂载渲染的根组件必须使用原始标签')
-    }
+    rootNode.createRNode()
+    rootEle = rootNode.getRNode()
+    // console.log(rootNode);
+
   }
   if (ele && rootEle) {
     if (ele.parentNode) {

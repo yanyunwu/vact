@@ -1,9 +1,12 @@
+import { BaseChildVNode, ChildVNode, replaceNode, standardNode } from "../children"
+import { PropValue, Watcher } from "../value"
 import { ElementVNode } from "./element"
 import { FragmentVNode } from "./fragment"
+import { TextVNode } from "./text"
 
 export abstract class VNode {
   // 父虚拟结点
-  parentVNode?: ElementVNode | FragmentVNode
+  parentVNode?: ElementVNode
   // 子节点类型
   abstract type: number
 
@@ -16,7 +19,37 @@ export abstract class VNode {
   abstract getRNode(): HTMLElement | Text
 
   // 设置节点的父节点
-  setParentVNode(parent?: ElementVNode | FragmentVNode) {
+  setParentVNode(parent?: ElementVNode) {
     this.parentVNode = parent
   }
+
+  // 节点依赖的属性
+  propValues?: Array<PropValue>
+  // 节点的生成函数
+  fn?: Function
+  abstract createRNode(): void
+
+  // 设置节点的依赖
+  setDeps(propValues: Array<PropValue>, fn: Function): void {
+    this.propValues = propValues
+    this.fn = fn
+  }
+
+  // 绑定节点的依赖
+  bindDeps(): void {
+    if (this.propValues && this.fn) {
+      let curMountedNode: ChildVNode = this as unknown as ChildVNode
+      let fn = () => {
+        let nextNode = standardNode(this.fn!(), this.parentVNode)
+        nextNode.createRNode()
+        replaceNode(nextNode, curMountedNode)
+        curMountedNode = nextNode
+      }
+      let watcher = new Watcher(fn)
+      this.propValues.forEach(propValue => propValue.setDep(watcher))
+    }
+  }
+
+  abstract mount(): void
+  abstract replaceWith(node: ChildVNode): void
 }

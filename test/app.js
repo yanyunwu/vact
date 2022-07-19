@@ -1,7 +1,7 @@
 var h = Vact.createNode
 
 
-class App extends Vact.Component {
+/* class App extends Vact.Component {
   constructor(props, children) {
     super({
       data: {
@@ -72,7 +72,7 @@ class HelloWorld extends Vact.Component {
       ]
     )
   }
-}
+} */
 
 /* class App extends Vact.Component {
   constructor() {
@@ -289,22 +289,26 @@ class App extends Vact.Component {
 
 /* class Test extends Vact.Component {
   constructor() {
-    super()
+    super({
+      data: {
+        num: 0
+      }
+    })
     console.log('被创造');
   }
 
 
   render() {
-    return h('span', null, '哈哈哈')
+    return h('span', { onClick: () => () => this.data.num++ }, () => this.data.num)
   }
 }
 
 function App() {
-  let state = Vact.defineState({ count: 0 })
+  let state = Vact.defineState({ count: 0, show: true })
   let span = h(Test)
   return h('div', { style: 'dasd' }, [
-    h('button', { onClick: () => () => state.data.count++ }, '哈哈哈'),
-    () => state.data.count ? span : ''
+    h('button', { onClick: () => () => state.data.show = !state.data.show }, '哈哈哈'),
+    () => state.data.show ? h(Test) : ''
   ])
 } */
 
@@ -335,11 +339,11 @@ function App() {
 
 
 
-/* function App() {
+function App() {
   // console.log(Vact);
   this.data.str = 'uuu'
   return h('div', { onClick: () => () => this.data.str = 'ads' }, h(Vact.Fragment, null, () => this.data.str))
-} */
+}
 
 
 Vact.mount('#app', h(App))

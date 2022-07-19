@@ -1,10 +1,11 @@
 import { Component, FunComponent } from "../component"
 import { getDepProps } from "../application"
 import { DataProxy } from "../proxy"
-import { Watcher } from "../value"
+import { PropValue, Watcher } from "../value"
 import { VNode } from "./baseNode"
 import { SubComponent } from "./type"
 import { ElementVNode } from "./element"
+import { ChildVNode, replaceNode, standardNode } from "../children"
 
 /**
  * 组件节点
@@ -38,8 +39,7 @@ export class ComponentVNode extends VNode {
     // 在初始化内部一定不要调用init
   }
 
-  createComponent(): SubComponent {
-    if (this.component) return this.component;
+  setComponentProps(): Record<any, any> {
     // 处理自定义组件的属性
     let props: Record<any, any> = new DataProxy({}).getData()
     for (let prop in this.props) {
@@ -62,6 +62,10 @@ export class ComponentVNode extends VNode {
       }
     }
 
+    return props
+  }
+
+  setComponentChildren(): any[] {
     let children = new DataProxy<any[]>([]).getData()
     if (this.children) {
       for (let i = 0; i < this.children.length; i++) {
@@ -86,6 +90,28 @@ export class ComponentVNode extends VNode {
       }
     }
 
+    return children
+  }
+
+  getComponent(): SubComponent {
+    return this.component!
+  }
+
+
+  getRNode(): HTMLElement {
+    // if (this.component instanceof Component) {
+    //   return this.component.getEFVNode().getRNode()
+    // } else if (this.component instanceof ElementVNode) {
+    //   return this.component.getRNode()
+    // } else {
+    //   throw new Error('组件初始化')
+    // }
+    return this.component!.getEFVNode().getRNode()
+  }
+
+  // 创建并初始化真实节点
+  createRNode(): void {
+    if (this.component) return // 如果已经初始化过则不要再初始化
     let Constructor = this.Constructor
     if (Constructor.prototype && Constructor.prototype.classComponent) {
       this.component = new (Constructor as SubComponentConstructor)()
@@ -95,23 +121,31 @@ export class ComponentVNode extends VNode {
       this.component = funComponent
     }
 
-    this.component.setProps(props)
-    this.component.setChildren(children)
-    return this.component
+    this.component.setProps(this.setComponentProps())
+    this.component.setChildren(this.setComponentChildren())
+
+    let ef = this.component.createEFVNode()
+    ef.createRNode()
+    ef.setParentVNode(this.parentVNode)
   }
 
-  getComponent(): SubComponent {
-    return this.component!
+  mount() {
+    this.parentVNode?.getRNode().appendChild(this.getRNode())
   }
 
+  replaceWith(node: ChildVNode) {
+    let ef = this.getComponent().getEFVNode()
+    ef.replaceWith(node)
+  }
 
-  getRNode(): HTMLElement {
-    if (this.component instanceof Component) {
-      return this.component.getEFVNode().getRNode()
-    } else if (this.component instanceof ElementVNode) {
-      return this.component.getRNode()
+  remove() {
+    let ef = this.component?.getEFVNode()
+    if (ef instanceof ElementVNode) {
+      ef.remove()
     } else {
-      throw new Error('组件初始化')
+      ef?.remove()
     }
   }
 }
+
+
