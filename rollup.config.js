@@ -19,7 +19,7 @@ const config = {
       sourcemap: true
     },
     {
-      file: "test/boundle/boundle.js",    // 必须
+      file: "examples/boundle/boundle.js",    // 必须
       format: 'umd',
       name: 'Vact'
     },
@@ -42,7 +42,7 @@ const config = {
     serve({
       // open: true,
       port: 3000,
-      contentBase: './test'
+      contentBase: './examples'
     }),
     typescript({
       exclude: "node_modules/**",

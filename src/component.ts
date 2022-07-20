@@ -1,4 +1,4 @@
-import { ComponentVNode, ElementVNode } from "./vnode";
+import { ComponentVNode, ElementVNode, SlotVNode } from "./vnode";
 import { SubComponent } from "./vnode/type";
 import { DataProxy } from './proxy'
 import { createNode, SubConstructor } from "./utils";
@@ -23,7 +23,7 @@ export abstract class Component {
   // 组件属性
   props?: Record<any, any>
   // 组件子元素
-  children?: any[]
+  children?: Record<string, SlotVNode>
   // 组件挂载的根虚拟节点
   efVNode?: ElementVNode | FragmentVNode
   // 类组件标识符
@@ -39,7 +39,7 @@ export abstract class Component {
     this.props = props
   }
 
-  setChildren(children: any[]) {
+  setChildren(children: Record<string, SlotVNode>) {
     this.children = children
   }
 
@@ -68,8 +68,8 @@ Component.prototype.classComponent = true
  * 解决函数式组件的类
 */
 export class FunComponent extends Component implements SubComponent {
-  renderFun?: (props?: Record<any, any>, children?: any[]) => ElementVNode
-  setRenderFun(fun: (props?: Record<any, any>, children?: any[]) => ElementVNode) {
+  renderFun?: (props?: Record<any, any>, children?: Record<string, SlotVNode>) => ElementVNode
+  setRenderFun(fun: (props?: Record<any, any>, children?: Record<string, SlotVNode>) => ElementVNode) {
     this.renderFun = fun
   }
 

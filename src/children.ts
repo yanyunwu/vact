@@ -17,33 +17,61 @@ export type RBaseChildVNode = BaseChildVNode | (() => BaseChildVNode)
 
 export function setNodeChildren(parentNode: ParentVNode, children: Array<RBaseChildVNode>): Array<ChildVNode> {
   let standardNodeList: Array<ChildVNode> = []
+  let si = 0
   for (let i = 0; i < children.length; i++) {
     let child = children[i]
     // 如果是函数要先看函数的返回值 不然直接添加
     if (typeof child !== 'function') {
       let snode = standardNode(child, parentNode)
       snode.createRNode() // 创建真实节点
-      standardNodeList.push(snode)
+      standardNodeList[si] = snode
       snode.mount() // 将真实节点挂载到父节点
+      si++
       continue
     }
 
     let [propValues, result] = getDepProps(child)
+
+    if (result instanceof SlotVNode) {
+      let schildren = result.children
+      for (let j = 0; j < schildren.length; j++) {
+        let schild = () => schildren[j]
+        let [propValues, result] = getDepProps(schild)
+
+        let snode = standardNode(result, parentNode)
+        snode.createRNode() // 创建真实节点
+        let csi = si
+        standardNodeList[csi] = snode
+        si++
+        let fn = () => {
+          let nextNode = standardNode((schild as () => BaseChildVNode)(), parentNode)
+          nextNode.createRNode()
+          replaceNode(nextNode, standardNodeList[csi])
+          standardNodeList[csi] = nextNode
+        }
+        snode.setDeps(propValues, fn)
+        snode.bindDeps()
+        snode.mount() // 将真实节点挂载到父节点
+      }
+
+      continue
+    }
+
+
     let snode = standardNode(result, parentNode)
     snode.createRNode() // 创建真实节点
-
-    standardNodeList[i] = snode
+    let csi = si
+    standardNodeList[csi] = snode
+    si++
     let fn = () => {
       let nextNode = standardNode((child as () => BaseChildVNode)(), parentNode)
       nextNode.createRNode()
-      replaceNode(nextNode, standardNodeList[i])
-      standardNodeList[i] = nextNode
+      replaceNode(nextNode, standardNodeList[csi])
+      standardNodeList[csi] = nextNode
     }
-
     snode.setDeps(propValues, fn)
     snode.bindDeps()
     snode.mount() // 将真实节点挂载到父节点
-    standardNodeList.push(snode)
 
   }
 
@@ -51,6 +79,7 @@ export function setNodeChildren(parentNode: ParentVNode, children: Array<RBaseCh
   // parentNode.setChildrenNodes(standardNodeList)
   // parentNode.mount()
 }
+
 
 type StandardNodeReturn<T> = T extends true ? ChildVNode : TextVNode | ElementVNode | ComponentVNode | FragmentVNode
 // 首先标准化节点

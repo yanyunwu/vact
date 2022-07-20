@@ -660,30 +660,55 @@
   */
   function setNodeChildren(parentNode, children) {
       let standardNodeList = [];
+      let si = 0;
       for (let i = 0; i < children.length; i++) {
           let child = children[i];
           // 如果是函数要先看函数的返回值 不然直接添加
           if (typeof child !== 'function') {
               let snode = standardNode(child, parentNode);
               snode.createRNode(); // 创建真实节点
-              standardNodeList.push(snode);
+              standardNodeList[si] = snode;
               snode.mount(); // 将真实节点挂载到父节点
+              si++;
               continue;
           }
           let [propValues, result] = getDepProps(child);
+          if (result instanceof SlotVNode) {
+              let schildren = result.children;
+              for (let j = 0; j < schildren.length; j++) {
+                  let schild = () => schildren[j];
+                  let [propValues, result] = getDepProps(schild);
+                  let snode = standardNode(result, parentNode);
+                  snode.createRNode(); // 创建真实节点
+                  let csi = si;
+                  standardNodeList[csi] = snode;
+                  si++;
+                  let fn = () => {
+                      let nextNode = standardNode(schild(), parentNode);
+                      nextNode.createRNode();
+                      replaceNode(nextNode, standardNodeList[csi]);
+                      standardNodeList[csi] = nextNode;
+                  };
+                  snode.setDeps(propValues, fn);
+                  snode.bindDeps();
+                  snode.mount(); // 将真实节点挂载到父节点
+              }
+              continue;
+          }
           let snode = standardNode(result, parentNode);
           snode.createRNode(); // 创建真实节点
-          standardNodeList[i] = snode;
+          let csi = si;
+          standardNodeList[csi] = snode;
+          si++;
           let fn = () => {
               let nextNode = standardNode(child(), parentNode);
               nextNode.createRNode();
-              replaceNode(nextNode, standardNodeList[i]);
-              standardNodeList[i] = nextNode;
+              replaceNode(nextNode, standardNodeList[csi]);
+              standardNodeList[csi] = nextNode;
           };
           snode.setDeps(propValues, fn);
           snode.bindDeps();
           snode.mount(); // 将真实节点挂载到父节点
-          standardNodeList.push(snode);
       }
       return standardNodeList;
       // parentNode.setChildrenNodes(standardNodeList)
@@ -757,6 +782,12 @@
   VNode.COMPONENT = 2;
   VNode.FRAGMENT = 3;
 
+  class SlotVNode {
+      constructor(children) {
+          this.children = children;
+      }
+  }
+
   class ComponentVNode extends VNode {
       constructor(Constructor, props, children) {
           super();
@@ -808,19 +839,16 @@
                       continue;
                   }
                   let [depProps, result] = getDepProps(this.children[i]);
-                  if (typeof result === 'function') {
-                      children[i] = result;
-                  }
-                  else {
-                      children[i] = result;
-                      let fn = () => children[i] = this.children[i]();
-                      depProps.forEach(item => {
-                          item.setDep(new Watcher(fn));
-                      });
-                  }
+                  children[i] = result;
+                  let fn = () => children[i] = this.children[i]();
+                  depProps.forEach(item => {
+                      item.setDep(new Watcher(fn));
+                  });
               }
           }
-          return children;
+          return {
+              default: new SlotVNode(children)
+          };
       }
       getComponent() {
           return this.component;

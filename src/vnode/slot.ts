@@ -1,23 +1,12 @@
-import { ParentVNode } from "../children"
+import { getDepProps } from "../application"
+import { ParentVNode, standardNode } from "../children"
 import { BaseChildVNode } from "../children"
+import { ElementVNode } from "./element"
 
 
 export class SlotVNode {
-  parentVNode?: ParentVNode
   children: Array<BaseChildVNode>
-  slots: Record<string, Array<SlotVNode>>
-
   constructor(children: Array<BaseChildVNode>) {
     this.children = children
-    this.slots = {}
   }
-
-  setSlots() {
-
-  }
-
-  setParentVNode(parent?: ParentVNode) {
-    this.parentVNode = parent
-  }
-
 }

@@ -5,8 +5,9 @@ import { Watcher } from "../value"
 import { VNode } from "./baseNode"
 import { SubComponent } from "./type"
 import { ElementVNode } from "./element"
-import { ChildVNode } from "../children"
+import { BaseChildVNode, ChildVNode } from "../children"
 import { FragmentVNode } from "./fragment"
+import { SlotVNode } from "./slot"
 
 /**
  * 组件节点
@@ -14,7 +15,7 @@ import { FragmentVNode } from "./fragment"
 interface SubComponentConstructor {
   new(): SubComponent
 }
-type FunComponentType = (props?: Record<any, any>, children?: any[]) => ElementVNode
+type FunComponentType = (props?: Record<any, any>, children?: Record<string, SlotVNode>) => ElementVNode
 type ComponentConstructor = SubComponentConstructor | FunComponentType
 
 export class ComponentVNode extends VNode {
@@ -66,8 +67,8 @@ export class ComponentVNode extends VNode {
     return props
   }
 
-  setComponentChildren(): any[] {
-    let children = new DataProxy<any[]>([]).getData()
+  setComponentChildren(): Record<string, SlotVNode> {
+    let children: BaseChildVNode[] = new DataProxy<any[]>([]).getData()
     if (this.children) {
       for (let i = 0; i < this.children.length; i++) {
         if (typeof this.children[i] !== 'function') {
@@ -75,23 +76,18 @@ export class ComponentVNode extends VNode {
           continue
         }
 
-        let [depProps, result] = getDepProps(this.children[i])
+        let [depProps, result] = getDepProps<BaseChildVNode>(this.children[i])
+        children[i] = result
+        let fn = () => children[i] = this.children![i]()
+        depProps.forEach(item => {
+          item.setDep(new Watcher(fn))
+        })
 
-        if (typeof result === 'function') {
-          children[i] = result
-        } else {
-          children[i] = result
-          let fn = () => children[i] = this.children![i]()
-
-          depProps.forEach(item => {
-            item.setDep(new Watcher(fn))
-          })
-
-        }
       }
     }
-
-    return children
+    return {
+      default: new SlotVNode(children)
+    }
   }
 
   getComponent(): SubComponent {
