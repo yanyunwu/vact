@@ -8,7 +8,6 @@ import { TextVNode } from "./text"
 
 export class ArrayVNode extends VNode {
   readonly type: number = 8
-  parentVNode?: ParentVNode
   props: Record<any, any>
   // 数组节点中不应该在存在数组
   bnodeList: Array<string | ElementVNode | ComponentVNode | FragmentVNode>
