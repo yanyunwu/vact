@@ -33,6 +33,7 @@ export function setNodeChildren(parentNode: ParentVNode, children: Array<RBaseCh
     let [propValues, result] = getDepProps(child)
 
     if (result instanceof SlotVNode) {
+
       let schildren = result.children
       for (let j = 0; j < schildren.length; j++) {
         let schild = () => schildren[j]

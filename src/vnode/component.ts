@@ -5,7 +5,7 @@ import { Watcher } from "../value"
 import { VNode } from "./baseNode"
 import { SubComponent } from "./type"
 import { ElementVNode } from "./element"
-import { BaseChildVNode, ChildVNode } from "../children"
+import { BaseChildVNode, ChildVNode, RBaseChildVNode } from "../children"
 import { FragmentVNode } from "./fragment"
 import { SlotVNode } from "./slot"
 
@@ -23,8 +23,8 @@ export class ComponentVNode extends VNode {
   component?: SubComponent
   Constructor: ComponentConstructor
   props?: Record<any, any>
-  children?: any[]
-  constructor(Constructor: ComponentConstructor, props?: Record<any, any>, children?: any[]) {
+  children?: RBaseChildVNode[]
+  constructor(Constructor: ComponentConstructor, props?: Record<any, any>, children?: RBaseChildVNode[]) {
     super()
     this.Constructor = Constructor
     this.props = props || {}
@@ -68,26 +68,63 @@ export class ComponentVNode extends VNode {
   }
 
   setComponentChildren(): Record<string, SlotVNode> {
-    let children: BaseChildVNode[] = new DataProxy<any[]>([]).getData()
+    let slots: Record<string, SlotVNode> = {}
+
+    let getSlot = (name: string) => {
+      if (slots[name]) { return slots[name] }
+      else {
+        return slots[name] = new SlotVNode(new DataProxy<any[]>([]).getData())
+      }
+    }
+
     if (this.children) {
       for (let i = 0; i < this.children.length; i++) {
-        if (typeof this.children[i] !== 'function') {
-          children[i] = this.children[i]
+        let child = this.children[i]
+        if (typeof child !== 'function') {
+          if (typeof child === 'string' || Array.isArray(child)) {
+            getSlot('default').children.push(child)
+          } else {
+            let slotProp: any = undefined
+            if (child.props) {
+              slotProp = child.props.slot
+            }
+
+            let slotName = 'default'
+            if (slotProp !== undefined && slotProp !== null) {
+              slotName = typeof slotProp === 'function' ? slotProp() : slotProp
+            }
+            let c = getSlot(slotName).children
+            c[c.length] = child
+          }
           continue
         }
 
-        let [depProps, result] = getDepProps<BaseChildVNode>(this.children[i])
-        children[i] = result
-        let fn = () => children[i] = this.children![i]()
-        depProps.forEach(item => {
-          item.setDep(new Watcher(fn))
-        })
+        let [depProps, result] = getDepProps<BaseChildVNode>(child)
+        if (typeof result === 'string' || Array.isArray(result)) {
+          const slotChildren = getSlot('default').children
+          let index = slotChildren.length
+          slotChildren[index] = result
+          let fn = () => slotChildren[index] = (child as () => BaseChildVNode)()
+          depProps.forEach(item => item.setDep(new Watcher(fn)))
+        } else {
+          let slotProp: any = undefined
+          if (result.props) {
+            slotProp = result.props.slot
+          }
 
+          let slotName = 'default'
+          if (slotProp !== undefined && slotProp !== null) {
+            slotName = typeof slotProp === 'function' ? slotProp() : slotProp
+          }
+          const slotChildren = getSlot(slotName).children
+          let index = slotChildren.length
+          slotChildren[index] = result
+          let fn = () => slotChildren[index] = (child as () => BaseChildVNode)()
+          depProps.forEach(item => item.setDep(new Watcher(fn)))
+        }
       }
     }
-    return {
-      default: new SlotVNode(children)
-    }
+    return slots
   }
 
   getComponent(): SubComponent {
@@ -96,13 +133,6 @@ export class ComponentVNode extends VNode {
 
 
   getRNode(): HTMLElement {
-    // if (this.component instanceof Component) {
-    //   return this.component.getEFVNode().getRNode()
-    // } else if (this.component instanceof ElementVNode) {
-    //   return this.component.getRNode()
-    // } else {
-    //   throw new Error('组件初始化')
-    // }
     return this.component!.getEFVNode().getRNode()
   }
 

@@ -25,6 +25,9 @@ export class DataEventProxy {
     if (!valueTarget[prop]) {
 
       let propValue = new PropValue(Array.isArray(target[prop]) ? new Proxy(target[prop], {
+        get(target, prop, receiver) {
+          return Reflect.get(target, prop, receiver)
+        },
         set(target, prop, value, receiver) {
           // 这里一定要先设置再通知
           let res = Reflect.set(target, prop, value, receiver)
@@ -75,7 +78,11 @@ export class DataProxy<T extends object> {
               depArr.push(propValue)
             }
           }
-          return propValue.value
+          if (Array.isArray(target)) {
+            return Reflect.get(target, prop, receiver)
+          } else {
+            return propValue.value
+          }
         }
       },
       set: (target, prop, value, receiver) => {
@@ -89,8 +96,10 @@ export class DataProxy<T extends object> {
           let propValue = this.dataProxyValue.getProp(target, prop)
 
           propValue.value = Array.isArray(value) ? new Proxy(value, {
+            get(target, prop, receiver) {
+              return Reflect.get(target, prop, receiver)
+            },
             set(target, prop, value, receiver) {
-              // 这里一定要先设置再通知
               let res = Reflect.set(target, prop, value, receiver)
               propValue.notify()
               return res
