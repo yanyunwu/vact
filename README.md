@@ -83,9 +83,9 @@ class App extends Component {
 
 如果使用创建节点的api去写的话会比较麻烦，所以这边推荐使用jsx语法
 
-**babel插件**：babel-plugin-syntax-jsx      babel-plugin-transform-vact-jsx（翻译vact的babel）
+**babel插件**：babel-plugin-syntax-jsx      
+babel-plugin-transform-vact-jsx（翻译vact的babel）
 
-**目前babel写的有一点小问题，需要手动引入createNode     `import { createNode } from 'vactapp'`**
 
 ### webapck配置
 
