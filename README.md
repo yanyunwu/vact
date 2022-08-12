@@ -55,8 +55,6 @@ class App extends Component {
 mount('#app', new App())
 ```
 
-因为是响应式的，所以写起来比react更简单，比vue更灵活
-
 
 
 ## 响应式
