@@ -1,7 +1,7 @@
 import { setActiver } from "./reactive"
 import { active, Activer } from './active'
 import { VNode } from "../vnode/vnode"
-import { isActiver } from "../utils"
+import { isActiver, isVNode } from "../utils"
 import { render } from "../render"
 import { Text } from '../vnode/text'
 import { ArrayNode } from "../vnode/array"
@@ -46,19 +46,35 @@ export function watch<T = any>(activeProps: (() => T) | Activer<T>, callback: (o
  * 监控可变状态dom
 */
 export type RowChildType = VNode | null | Array<VNode>
-export function watchVNode(activeProps: Activer<RowChildType>, callback: (oldVNode: VNode, newVNode: VNode) => void): VNode {
-  let watcher = new Watcher<RowChildType>(activeProps, function (oldVNode: RowChildType, newVNode: RowChildType) {
-    if (newVNode === null) newVNode = render(Text, null, '')
-    if (Array.isArray(newVNode)) {
-      newVNode = render(ArrayNode, null, newVNode)
+export function watchVNode(activeVNode: Activer<RowChildType>, callback: (oldVNode: VNode, newVNode: VNode) => void): VNode {
+  let watcher = new Watcher<RowChildType>(activeVNode, function (oldVNode: RowChildType, newVNode: RowChildType) {
+    if (!isVNode(newVNode)) {
+      if (newVNode === null) newVNode = render(Text, null, '')
+      else if (Array.isArray(newVNode)) {
+        newVNode = render(ArrayNode, null, newVNode)
+      } else {
+        newVNode = render(Text, null, String(newVNode))
+      }
     }
     callback(oldVNode as VNode, newVNode)
     watcher.value = newVNode
   })
 
-  if (!watcher.value) watcher.value = render(Text, null, '')
-  if (Array.isArray(watcher.value)) {
+  if (isVNode(watcher.value)) return watcher.value
+
+  if (watcher.value === null) watcher.value = render(Text, null, '')
+  else if (Array.isArray(watcher.value)) {
     watcher.value = render(ArrayNode, null, watcher.value)
+  } else {
+    watcher.value = render(Text, null, String(watcher.value))
   }
   return watcher.value
+}
+
+
+/**
+ * 监控可变dom的prop
+*/
+export function watchProp(activeProp: Activer, callback: (oldVNode: VNode, newVNode: VNode) => void): any {
+  return new Watcher(activeProp, callback).value
 }

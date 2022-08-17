@@ -1,4 +1,4 @@
-import { unmount, mount } from "./mount";
+import { unmount, mount, setElementProp } from "./mount";
 import { VText } from "./vnode/text";
 import { VNode, VNODE_TYPE } from "./vnode/vnode";
 
@@ -25,6 +25,7 @@ export function patch(oldVNode: VNode, newVNode: VNode, container: HTMLElement) 
     unmount(oldVNode, container)
     mount(newVNode, container, nextSibling as HTMLElement | undefined)
   }
+
 }
 
 export function patchElement() {
@@ -36,6 +37,11 @@ export function patchText() {
 
 }
 
-export function patchArrayNode() {
+export function patchArrayNode(oldVNode: VNode, newVNode: VNode) {
 
+}
+
+
+export function patchElementProp(oldValue: any, newValue: any, el: HTMLElement, prop: string) {
+  setElementProp(el, prop, newValue)
 }

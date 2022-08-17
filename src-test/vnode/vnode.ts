@@ -1,4 +1,5 @@
 import { Activer } from "../reactive/active"
+import { Component } from './component'
 
 /**
  * 虚拟dom节点类型枚举
@@ -19,7 +20,7 @@ export enum VNODE_TYPE {
 export interface VNode {
 
   // 虚拟节点类型
-  type: string | symbol,
+  type: string | symbol | Component,
 
   // 虚拟节点属性
   props?: Record<string, any> | null,

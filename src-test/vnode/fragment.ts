@@ -12,7 +12,7 @@ export interface VFragment extends VNode {
   type: symbol,
 
   // 虚拟节点属性
-  props: Record<string, any>,
+  props: null,
 
   // 虚拟节点子节点
   children: Array<Activer | VNode | string>,

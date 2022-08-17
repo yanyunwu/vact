@@ -49,7 +49,13 @@ export function reactive(target: Record<string | symbol, any>) {
 export function reactiveArray(targetArr: Array<any>, targetObj: Record<any, any>, Arrprop: string | symbol) {
   let handler: ProxyHandler<Record<any, any>> = {
     get(target, prop, receiver) {
-      return Reflect.get(target, prop, receiver)
+      const res = Reflect.get(target, prop, receiver)
+
+      if (isObjectExact(res)) {
+        return reactive(res)
+      }
+
+      return res
     },
     set(target, prop, value, receiver) {
       const res = Reflect.set(target, prop, value, receiver)
@@ -97,6 +103,4 @@ export function setActiver(fn: Watcher | null) {
 export function getActiver(): Watcher | null {
   return activeWatcher
 }
-
-
 

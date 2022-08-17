@@ -46,20 +46,69 @@
           mount(newVNode, container, nextSibling);
       }
   }
+  function patchElementProp(oldValue, newValue, el, prop) {
+      setElementProp(el, prop, newValue);
+  }
+
+  const Fragment = Symbol('Fragment');
+
+  const Text = Symbol('Text');
+
+  const ArrayNode = Symbol('ArrayNode');
+
+  function isString(content) {
+      return typeof content === 'string';
+  }
+  function isFunction(content) {
+      return typeof content === 'function';
+  }
+  function isFragment(content) {
+      return content === Fragment;
+  }
+  function isArrayNode(content) {
+      return content === ArrayNode;
+  }
+  function isText(content) {
+      return content === Text;
+  }
+  function isActiver(content) {
+      return isObject(content) && content.flag === 'activer';
+  }
+  function isVNode(content) {
+      return isObject(content) && content.flag in VNODE_TYPE;
+  }
+  function isObjectExact(content) {
+      return isObject(content) && content.constructor === Object;
+  }
+  function isOnEvent(str) {
+      return /^on.+$/.test(str);
+  }
+  function isObject(content) {
+      return typeof content === 'object' && content !== null;
+  }
 
   // 目标对象到映射对象
   const targetMap = new WeakMap();
   // 全局变量watcher
   let activeWatcher = null;
+  const REACTIVE = Symbol('reactive');
   /**
    * 实现响应式对象
   */
   function reactive(target) {
+      if (target[REACTIVE])
+          return target;
       let handler = {
           get(target, prop, receiver) {
+              if (prop === REACTIVE)
+                  return true;
               const res = Reflect.get(target, prop, receiver);
+              if (isObjectExact(res)) {
+                  return reactive(res);
+              }
               if (Array.isArray(res)) {
-                  return [];
+                  track(target, prop);
+                  return reactiveArray(res, target, prop);
               }
               track(target, prop);
               return res;
@@ -73,6 +122,26 @@
           }
       };
       return new Proxy(target, handler);
+  }
+  /**
+   * 设置响应式数组
+  */
+  function reactiveArray(targetArr, targetObj, Arrprop) {
+      let handler = {
+          get(target, prop, receiver) {
+              const res = Reflect.get(target, prop, receiver);
+              if (isObjectExact(res)) {
+                  return reactive(res);
+              }
+              return res;
+          },
+          set(target, prop, value, receiver) {
+              const res = Reflect.set(target, prop, value, receiver);
+              trigger(targetObj, Arrprop);
+              return res;
+          }
+      };
+      return new Proxy(targetArr, handler);
   }
   /**
    * 响应触发依赖
@@ -124,33 +193,6 @@
       return new Activer(fn);
   }
 
-  const Fragment = Symbol('Fragment');
-
-  const Text = Symbol('Text');
-
-  function isString(content) {
-      return typeof content === 'string';
-  }
-  function isFunction(content) {
-      return typeof content === 'function';
-  }
-  function isFragment(content) {
-      return content === Fragment;
-  }
-  function isText(content) {
-      return content === Text;
-  }
-  function isActiver(content) {
-      return typeof content === 'object' && content !== null && content.flag === 'activer';
-  }
-  function isVNode(content) {
-      return typeof content === 'object' && content !== null && content.flag in VNODE_TYPE;
-  }
-  function isObjectExact(content) {
-      return typeof content === 'object' && content !== null && content.constructor === Object;
-  }
-  console.log(isObjectExact({}));
-
   /**
    * 传说中的render函数
   */
@@ -165,12 +207,27 @@
       else if (isText(type)) {
           flag = VNODE_TYPE.TEXT;
       }
+      else if (isArrayNode(type)) {
+          flag = VNODE_TYPE.ArrayNode;
+      }
       else {
           flag = VNODE_TYPE.Component;
+      }
+      if (!isText(type) && !Array.isArray(children)) {
+          children = [children];
       }
       // 子元素预处理 
       if (children && Array.isArray(children)) {
           children = children.map(child => isFunction(child) ? active(child) : child);
+      }
+      // 属性预处理
+      if (props) {
+          for (const prop in props) {
+              // 以on开头的事件不需要处理
+              if (!isOnEvent(prop) && isFunction(props[prop])) {
+                  props[prop] = active(props[prop]);
+              }
+          }
       }
       return {
           type,
@@ -179,8 +236,6 @@
           flag
       };
   }
-
-  const ArrayNode = Symbol('ArrayNode');
 
   /**
    * 观察者
@@ -201,50 +256,70 @@
           this.callback(oldValue, newValue);
       }
   }
-  function watchVNode(activeProps, callback) {
-      let watcher = new Watcher(activeProps, function (oldVNode, newVNode) {
-          if (newVNode === null)
-              newVNode = render(Text, null, '');
-          if (Array.isArray(newVNode)) {
-              newVNode = render(ArrayNode, null, newVNode);
+  function watchVNode(activeVNode, callback) {
+      let watcher = new Watcher(activeVNode, function (oldVNode, newVNode) {
+          if (!isVNode(newVNode)) {
+              if (newVNode === null)
+                  newVNode = render(Text, null, '');
+              else if (Array.isArray(newVNode)) {
+                  newVNode = render(ArrayNode, null, newVNode);
+              }
+              else {
+                  newVNode = render(Text, null, String(newVNode));
+              }
           }
           callback(oldVNode, newVNode);
           watcher.value = newVNode;
       });
-      if (!watcher.value)
+      if (isVNode(watcher.value))
+          return watcher.value;
+      if (watcher.value === null)
           watcher.value = render(Text, null, '');
-      if (Array.isArray(watcher.value)) {
+      else if (Array.isArray(watcher.value)) {
           watcher.value = render(ArrayNode, null, watcher.value);
+      }
+      else {
+          watcher.value = render(Text, null, String(watcher.value));
       }
       return watcher.value;
   }
+  /**
+   * 监控可变dom的prop
+  */
+  function watchProp(activeProp, callback) {
+      return new Watcher(activeProp, callback).value;
+  }
 
   function mount(vnode, container, anchor) {
-      if (vnode.flag === VNODE_TYPE.ELEMENT) {
-          mountElement(vnode, container, anchor);
-      }
-      else if (vnode.flag === VNODE_TYPE.TEXT) {
-          mountText(vnode, container, anchor);
-      }
-      else if (vnode.flag === VNODE_TYPE.Fragment) {
-          mountFragment(vnode, container, anchor);
-      }
-      else if (vnode.flag === VNODE_TYPE.ArrayNode) {
-          mountArrayNode(vnode, container, anchor);
+      switch (vnode.flag) {
+          case VNODE_TYPE.ELEMENT:
+              mountElement(vnode, container, anchor);
+              break;
+          case VNODE_TYPE.TEXT:
+              mountText(vnode, container, anchor);
+              break;
+          case VNODE_TYPE.Fragment:
+              mountFragment(vnode, container, anchor);
+              break;
+          case VNODE_TYPE.ArrayNode:
+              mountArrayNode(vnode, container, anchor);
+              break;
       }
   }
   function unmount(vnode, container) {
-      if (vnode.flag === VNODE_TYPE.ELEMENT) {
-          unmountElement(vnode);
-      }
-      else if (vnode.flag === VNODE_TYPE.TEXT) {
-          unmountText(vnode);
-      }
-      else if (vnode.flag === VNODE_TYPE.Fragment) {
-          unmountFragment(vnode);
-      }
-      else if (vnode.flag === VNODE_TYPE.ArrayNode) {
-          unmountArrayNode(vnode);
+      switch (vnode.flag) {
+          case VNODE_TYPE.ELEMENT:
+              unmountElement(vnode);
+              break;
+          case VNODE_TYPE.TEXT:
+              unmountText(vnode);
+              break;
+          case VNODE_TYPE.Fragment:
+              unmountFragment(vnode);
+              break;
+          case VNODE_TYPE.ArrayNode:
+              unmountArrayNode(vnode);
+              break;
       }
   }
   function mountChildren(children, container, anchor) {
@@ -264,6 +339,7 @@
   function mountElement(vnode, container, anchor) {
       const el = document.createElement(vnode.type);
       vnode.el = el;
+      mountElementProps(vnode);
       mountChildren(vnode.children, el);
       container.insertBefore(el, anchor);
   }
@@ -319,6 +395,47 @@
           cur = next;
       }
       end.remove();
+  }
+  function mountElementProps(vnode) {
+      let el = vnode.el;
+      let props = vnode.props;
+      // 处理标签属性
+      for (let prop in props) {
+          let value = props[prop];
+          if (isActiver(value)) {
+              let firstValue = watchProp(value, (oldValue, newValue) => patchElementProp(oldValue, newValue, el, prop));
+              setElementProp(el, prop, firstValue);
+          }
+          else {
+              setElementProp(el, prop, value);
+          }
+      }
+  }
+  function setElementProp(el, prop, value) {
+      if (isOnEvent(prop) && isFunction(value)) {
+          let pattern = /^on(.+)$/;
+          let result = prop.match(pattern);
+          result && el.addEventListener(result[1].toLocaleLowerCase(), value.bind(el));
+          return;
+      }
+      switch (prop) {
+          case 'className':
+              el.className = String(value);
+              break;
+          case 'style':
+              if (isObject(value)) {
+                  value = mergeStyle(value);
+              }
+          default:
+              el.setAttribute(prop, value);
+      }
+  }
+  function mergeStyle(style) {
+      let styleStringList = [];
+      for (let cssAttr in style) {
+          styleStringList.push(`${cssAttr}:${style[cssAttr]};`);
+      }
+      return styleStringList.join('');
   }
 
   exports.Fragment = Fragment;

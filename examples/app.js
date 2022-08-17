@@ -1,19 +1,24 @@
 const { mount, render, reactive, active, Text, Fragment } = Vact
 const state = reactive({
   show: true,
-  show1: true
+  show1: true,
+  list: [1, 2, 3],
+  text: 1,
+  color: 'red'
 })
 
-const app = render('div', null, [
-  () => state.show ? render(Fragment, null, [
+const app = render('div', { style: () => ({ color: state.color }), onClick: () => state.color = 'blue' }, [
+  () => state.show ? render(Fragment, null,
     render('ul', null, [
-      () => state.show1 ? render('li', null, [1]) : null,
-      render('li', null, [2]),
-      render('li', null, [3])
+      () => state.list.map(num => render('li', null, num))
     ])
-  ]) : null,
-  render(Fragment, null, ['1231'])
+  ) : null,
+  render(Fragment, null, [() => state.text])
 ])
 
 mount(app, document.body)
+
+setInterval(() => {
+  state.text++
+}, 1000)
 
