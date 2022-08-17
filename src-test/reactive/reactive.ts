@@ -1,18 +1,41 @@
+import { isObjectExact } from "../utils"
+import { watch, Watcher } from "./watch"
+
+// 目标对象到映射对象
 const targetMap = new WeakMap()
-type Activer = () => void
-let activer: Activer | null = null
+// 全局变量watcher
+let activeWatcher: Watcher | null = null
+const REACTIVE = Symbol('reactive')
 
+/**
+ * 实现响应式对象
+*/
+export function reactive(target: Record<string | symbol, any>) {
+  if (target[REACTIVE]) return target
 
-export function reactive(target: Record<any, any>) {
   let handler: ProxyHandler<Record<any, any>> = {
     get(target, prop, receiver) {
+      if (prop === REACTIVE) return true
+      const res = Reflect.get(target, prop, receiver)
+
+      if (isObjectExact(res)) {
+        return reactive(res)
+      }
+
+      if (Array.isArray(res)) {
+        track(target, prop)
+        return reactiveArray(res, target, prop)
+      }
+
       track(target, prop)
-      return Reflect.get(target, prop, receiver)
+      return res
     },
 
     set(target, prop, value, receiver) {
+      const oldValue = Reflect.get(target, prop, receiver)
       const res = Reflect.set(target, prop, value, receiver)
-      trigger(target, prop)
+      const newValue = Reflect.get(target, prop, receiver)
+      trigger(target, prop, oldValue, newValue)
       return res
     }
   }
@@ -20,32 +43,60 @@ export function reactive(target: Record<any, any>) {
   return new Proxy(target, handler)
 }
 
+/**
+ * 设置响应式数组
+*/
+export function reactiveArray(targetArr: Array<any>, targetObj: Record<any, any>, Arrprop: string | symbol) {
+  let handler: ProxyHandler<Record<any, any>> = {
+    get(target, prop, receiver) {
+      return Reflect.get(target, prop, receiver)
+    },
+    set(target, prop, value, receiver) {
+      const res = Reflect.set(target, prop, value, receiver)
+      trigger(targetObj, Arrprop)
+      return res
+    }
+  }
 
-function trigger(target: Record<any, any>, prop: string | symbol) {
-  let mapping: Record<string | symbol, Array<any>> = targetMap.get(target)
-  if (!mapping) return
-
-  let mappingProp: Array<any> = mapping[prop]
-  if (!mappingProp) return
-
-  mappingProp.forEach(item => item())
+  return new Proxy(targetArr, handler)
 }
 
+/**
+ * 响应触发依赖
+*/
+function trigger(target: Record<any, any>, prop: string | symbol, oldValue?: any, newValue?: any) {
+  let mapping: Record<string | symbol, Array<Watcher>> = targetMap.get(target)
+  if (!mapping) return
 
+  let mappingProp: Array<Watcher> = mapping[prop]
+  if (!mappingProp) return
+
+  mappingProp.forEach(watcher => watcher.update(oldValue, newValue))
+}
+
+/**
+ * 追踪绑定依赖
+*/
 function track(target: Record<any, any>, prop: string | symbol) {
+  if (!activeWatcher) return
+
   let mapping: Record<string | symbol, Array<any>> = targetMap.get(target)
   if (!mapping) targetMap.set(target, mapping = {})
 
   let mappingProp: Array<any> = mapping[prop]
   if (!mappingProp) mappingProp = mapping[prop] = []
 
-  mappingProp.push(activer)
+  mappingProp.push(activeWatcher)
 }
 
-export function setActiver(fn: Activer | null) {
-  activer = fn
+// 设置全局变量
+export function setActiver(fn: Watcher | null) {
+  activeWatcher = fn
+}
+// 设置全局变量
+export function getActiver(): Watcher | null {
+  return activeWatcher
 }
 
-export function getActiver(): Activer | null {
-  return activer
-}
+
+

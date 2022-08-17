@@ -1,3 +1,4 @@
+import { Activer } from "../reactive/active"
 
 /**
  * 虚拟dom节点类型枚举
@@ -8,7 +9,8 @@ export enum VNODE_TYPE {
   // 文本节点类型
   TEXT,
   Fragment,
-  Component
+  Component,
+  ArrayNode
 }
 
 /**
@@ -20,13 +22,16 @@ export interface VNode {
   type: string | symbol,
 
   // 虚拟节点属性
-  props: Record<string, any>,
+  props?: Record<string, any> | null,
 
   // 虚拟节点子节点
-  children: Array<any>,
+  children?: Array<Activer | VNode | string> | string,
 
   // 虚拟节点表标识
   flag: VNODE_TYPE
+
+  // 真实节点
+  el?: HTMLElement | Text
 
 }
 

@@ -1,10 +1,11 @@
-import { isString, isFragment, isText } from "./utils";
+import { active } from "./reactive/active";
+import { isString, isFragment, isText, isFunction } from "./utils";
 import { VNode, VNODE_TYPE } from "./vnode/vnode";
 
 /**
  * 传说中的render函数
 */
-export function render(type: string | symbol, props: Record<string, any>, children: Array<any>): VNode {
+export function render(type: string | symbol, props?: Record<string, any> | null, children?: Array<any> | string): VNode {
   let flag: VNODE_TYPE
 
   if (isString(type)) {
@@ -15,6 +16,11 @@ export function render(type: string | symbol, props: Record<string, any>, childr
     flag = VNODE_TYPE.TEXT
   } else {
     flag = VNODE_TYPE.Component
+  }
+
+  // 子元素预处理 
+  if (children && Array.isArray(children)) {
+    children = children.map(child => isFunction(child) ? active(child) : child)
   }
 
   return {
