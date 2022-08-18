@@ -15,9 +15,9 @@
       VNODE_TYPE[VNODE_TYPE["ELEMENT"] = 0] = "ELEMENT";
       // 文本节点类型
       VNODE_TYPE[VNODE_TYPE["TEXT"] = 1] = "TEXT";
-      VNODE_TYPE[VNODE_TYPE["Fragment"] = 2] = "Fragment";
-      VNODE_TYPE[VNODE_TYPE["Component"] = 3] = "Component";
-      VNODE_TYPE[VNODE_TYPE["ArrayNode"] = 4] = "ArrayNode";
+      VNODE_TYPE[VNODE_TYPE["FRAGMENT"] = 2] = "FRAGMENT";
+      VNODE_TYPE[VNODE_TYPE["COMPONENT"] = 3] = "COMPONENT";
+      VNODE_TYPE[VNODE_TYPE["ARRAYNODE"] = 4] = "ARRAYNODE";
   })(VNODE_TYPE || (VNODE_TYPE = {}));
 
   function isSameVNode(oldVNode, newVNode) {
@@ -25,14 +25,13 @@
   }
   function patch(oldVNode, newVNode, container) {
       var _a, _b;
+      // 如果两个节点引用一样不需要判断
       if (oldVNode === newVNode)
           return;
+      // 这里在判断相同类型的节点后可以做进一步优化
       if (isSameVNode(oldVNode, newVNode)) {
           if (oldVNode.flag === VNODE_TYPE.TEXT) {
-              let node = oldVNode;
-              let newNode = newVNode;
-              node.el.nodeValue = newNode.children;
-              newNode.el = node.el;
+              patchText(oldVNode, newVNode);
           }
           else {
               const nextSibling = (_a = oldVNode === null || oldVNode === void 0 ? void 0 : oldVNode.el) === null || _a === void 0 ? void 0 : _a.nextSibling;
@@ -45,6 +44,10 @@
           unmount(oldVNode);
           mount(newVNode, container, nextSibling);
       }
+  }
+  function patchText(oldVNode, newVNode, container) {
+      oldVNode.el.nodeValue = newVNode.children;
+      newVNode.el = oldVNode.el;
   }
   function patchElementProp(oldValue, newValue, el, prop) {
       setElementProp(el, prop, newValue);
@@ -85,6 +88,9 @@
   }
   function isObject(content) {
       return typeof content === 'object' && content !== null;
+  }
+  function isArray(content) {
+      return Array.isArray(content);
   }
 
   // 目标对象到映射对象
@@ -193,26 +199,8 @@
       return new Activer(fn);
   }
 
-  /**
-   * 传说中的render函数
-  */
   function render(type, props, children) {
-      let flag;
-      if (isString(type)) {
-          flag = VNODE_TYPE.ELEMENT;
-      }
-      else if (isFragment(type)) {
-          flag = VNODE_TYPE.Fragment;
-      }
-      else if (isText(type)) {
-          flag = VNODE_TYPE.TEXT;
-      }
-      else if (isArrayNode(type)) {
-          flag = VNODE_TYPE.ArrayNode;
-      }
-      else {
-          flag = VNODE_TYPE.Component;
-      }
+      // 预处理 处理为单个的children
       if (!isText(type) && !Array.isArray(children)) {
           children = [children];
       }
@@ -229,12 +217,62 @@
               }
           }
       }
+      let flag;
+      if (isString(type)) {
+          flag = VNODE_TYPE.ELEMENT;
+      }
+      else if (isFragment(type)) {
+          flag = VNODE_TYPE.FRAGMENT;
+      }
+      else if (isText(type)) {
+          flag = VNODE_TYPE.TEXT;
+      }
+      else if (isArrayNode(type)) {
+          flag = VNODE_TYPE.ARRAYNODE;
+      }
+      else if (isFunction(type)) {
+          return renderComponent(type, props || {}, children || []);
+      }
+      else {
+          throw '传入参数不合法';
+      }
       return {
-          type,
+          type: type,
           props,
           children,
           flag
       };
+  }
+  // 判断是普通函数还是构造函数
+  function renderComponent(component, props, children) {
+      let cprops = {};
+      for (let prop in props) {
+          let cur = props[prop];
+          if (isActiver(cur)) {
+              Object.defineProperty(cprops, prop, {
+                  get() {
+                      return cur.value;
+                  }
+              });
+          }
+          else {
+              cprops[prop] = cur;
+          }
+      }
+      let result = new component(cprops, children);
+      if (isVNode(result)) {
+          return result;
+      }
+      else {
+          result.props = cprops;
+          result.children = children;
+          return {
+              type: result,
+              props,
+              children,
+              flag: VNODE_TYPE.COMPONENT
+          };
+      }
   }
 
   /**
@@ -256,10 +294,20 @@
           this.callback(oldValue, newValue);
       }
   }
+  /**
+   * 监控自定义响应式属性
+  */
+  function watch(activeProps, callback) {
+      if (!isActiver(activeProps))
+          activeProps = active(activeProps);
+      return new Watcher(activeProps, function (oldValue, newValue) {
+          callback(oldValue, newValue);
+      });
+  }
   function watchVNode(activeVNode, callback) {
       let watcher = new Watcher(activeVNode, function (oldVNode, newVNode) {
           if (!isVNode(newVNode)) {
-              if (newVNode === null)
+              if (!newVNode)
                   newVNode = render(Text, null, '');
               else if (Array.isArray(newVNode)) {
                   newVNode = render(ArrayNode, null, newVNode);
@@ -273,7 +321,7 @@
       });
       if (isVNode(watcher.value))
           return watcher.value;
-      if (watcher.value === null)
+      if (!watcher.value)
           watcher.value = render(Text, null, '');
       else if (Array.isArray(watcher.value)) {
           watcher.value = render(ArrayNode, null, watcher.value);
@@ -298,11 +346,14 @@
           case VNODE_TYPE.TEXT:
               mountText(vnode, container, anchor);
               break;
-          case VNODE_TYPE.Fragment:
+          case VNODE_TYPE.FRAGMENT:
               mountFragment(vnode, container, anchor);
               break;
-          case VNODE_TYPE.ArrayNode:
+          case VNODE_TYPE.ARRAYNODE:
               mountArrayNode(vnode, container, anchor);
+              break;
+          case VNODE_TYPE.COMPONENT:
+              mountComponent(vnode, container, anchor);
               break;
       }
   }
@@ -314,11 +365,14 @@
           case VNODE_TYPE.TEXT:
               unmountText(vnode);
               break;
-          case VNODE_TYPE.Fragment:
+          case VNODE_TYPE.FRAGMENT:
               unmountFragment(vnode);
               break;
-          case VNODE_TYPE.ArrayNode:
+          case VNODE_TYPE.ARRAYNODE:
               unmountArrayNode(vnode);
+              break;
+          case VNODE_TYPE.COMPONENT:
+              unmountComponent(vnode);
               break;
       }
   }
@@ -331,8 +385,11 @@
           else if (isVNode(child)) {
               mount(child, container, anchor);
           }
+          else if (isArray(child)) {
+              mountChildren(child, container, anchor);
+          }
           else {
-              mount(render(Text, null, String(child)), container, anchor);
+              mount(render(Text, null, child ? String(child) : ''), container, anchor);
           }
       });
   }
@@ -411,6 +468,9 @@
           }
       }
   }
+  /**
+   * 处理单个dom属性
+  */
   function setElementProp(el, prop, value) {
       if (isOnEvent(prop) && isFunction(value)) {
           let pattern = /^on(.+)$/;
@@ -430,6 +490,9 @@
               el.setAttribute(prop, value);
       }
   }
+  /**
+   * 将对象形式的style转化为字符串
+  */
   function mergeStyle(style) {
       let styleStringList = [];
       for (let cssAttr in style) {
@@ -437,13 +500,78 @@
       }
       return styleStringList.join('');
   }
+  function mountComponent(vnode, container, anchor) {
+      const root = vnode.type.render(render);
+      vnode.root = root;
+      mount(root, container, anchor);
+      vnode.el = root.el;
+  }
+  function unmountComponent(vnode, container) {
+      unmount(vnode.root);
+  }
 
+  class RefImpl {
+      constructor(value) {
+          this._value = value;
+      }
+      get value() {
+          track(this, 'value');
+          return this._value;
+      }
+      set value(value) {
+          this._value = value;
+          trigger(this, 'value');
+      }
+  }
+  function ref(value) {
+      return new RefImpl(value);
+  }
+
+  function state(value) {
+      return ref(value);
+  }
+  function defineState(target) {
+      return reactive(target);
+  }
+
+  class Component {
+      constructor(config = {}) {
+          this.config = config;
+          this.data = defineState(config.data || {});
+      }
+  }
+
+  class Vact {
+      constructor(vnode, options) {
+          this.rootVNode = vnode;
+      }
+      mount(selector) {
+          const el = document.querySelector(selector);
+          let container = document.createElement('div');
+          mount(this.rootVNode, container);
+          el === null || el === void 0 ? void 0 : el.replaceWith(...container.childNodes);
+      }
+  }
+  function createApp(vnode, options) {
+      return new Vact(vnode, options);
+  }
+
+  exports.Activer = Activer;
+  exports.Component = Component;
   exports.Fragment = Fragment;
   exports.Text = Text;
-  exports.active = active;
+  exports.createApp = createApp;
+  exports.createVNode = render;
+  exports["default"] = Vact;
+  exports.defineState = defineState;
   exports.mount = mount;
   exports.reactive = reactive;
+  exports.ref = ref;
   exports.render = render;
+  exports.state = state;
+  exports.watch = watch;
+  exports.watchProp = watchProp;
+  exports.watchVNode = watchVNode;
 
   Object.defineProperty(exports, '__esModule', { value: true });
 

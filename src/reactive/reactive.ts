@@ -1,5 +1,5 @@
 import { isObjectExact } from "../utils"
-import { watch, Watcher } from "./watch"
+import { Watcher } from "./watch"
 
 // 目标对象到映射对象
 const targetMap = new WeakMap()
@@ -10,10 +10,10 @@ const REACTIVE = Symbol('reactive')
 /**
  * 实现响应式对象
 */
-export function reactive(target: Record<string | symbol, any>) {
+export function reactive<T extends Record<string | symbol, any>>(target: T): T {
   if (target[REACTIVE]) return target
 
-  let handler: ProxyHandler<Record<any, any>> = {
+  let handler: ProxyHandler<T> = {
     get(target, prop, receiver) {
       if (prop === REACTIVE) return true
       const res = Reflect.get(target, prop, receiver)
@@ -46,7 +46,7 @@ export function reactive(target: Record<string | symbol, any>) {
 /**
  * 设置响应式数组
 */
-export function reactiveArray(targetArr: Array<any>, targetObj: Record<any, any>, Arrprop: string | symbol) {
+function reactiveArray(targetArr: Array<any>, targetObj: Record<any, any>, Arrprop: string | symbol) {
   let handler: ProxyHandler<Record<any, any>> = {
     get(target, prop, receiver) {
       const res = Reflect.get(target, prop, receiver)
@@ -70,7 +70,7 @@ export function reactiveArray(targetArr: Array<any>, targetObj: Record<any, any>
 /**
  * 响应触发依赖
 */
-function trigger(target: Record<any, any>, prop: string | symbol, oldValue?: any, newValue?: any) {
+export function trigger(target: Record<any, any>, prop: string | symbol, oldValue?: any, newValue?: any) {
   let mapping: Record<string | symbol, Array<Watcher>> = targetMap.get(target)
   if (!mapping) return
 
@@ -83,13 +83,13 @@ function trigger(target: Record<any, any>, prop: string | symbol, oldValue?: any
 /**
  * 追踪绑定依赖
 */
-function track(target: Record<any, any>, prop: string | symbol) {
+export function track(target: Record<any, any>, prop: string | symbol) {
   if (!activeWatcher) return
 
-  let mapping: Record<string | symbol, Array<any>> = targetMap.get(target)
+  let mapping: Record<string | symbol, Array<Watcher>> = targetMap.get(target)
   if (!mapping) targetMap.set(target, mapping = {})
 
-  let mappingProp: Array<any> = mapping[prop]
+  let mappingProp: Array<Watcher> = mapping[prop]
   if (!mappingProp) mappingProp = mapping[prop] = []
 
   mappingProp.push(activeWatcher)

@@ -1,74 +1,27 @@
-import { setNodeChildren } from "../children";
-import { VNode } from "./baseNode";
-import { TextVNode } from "./text";
-import { ChildVNode, RBaseChildVNode } from "../children";
-import { ComponentVNode } from "./component";
 
 
-export class FragmentVNode extends VNode {
-  type: number = VNode.FRAGMENT;
-  props?: {
-    [key: string]: any
-  }
-  children?: Array<RBaseChildVNode>
-  fragment?: HTMLElement
-  VNodeChildren: Array<ChildVNode>
-  pivot: TextVNode // 锚点
+export const Fragment = Symbol('Fragment');
 
-  constructor(props?: Record<any, any>, children?: any[]) {
-    super()
-    this.props = props
-    this.children = children
-    this.VNodeChildren = []
-    this.pivot = new TextVNode('')
-    this.pivot.createRNode()
-  }
+import { Activer } from "../reactive";
+import { VNode, VNODE_TYPE } from "./vnode";
 
-  getRNode(): HTMLElement {
-    return this.fragment!
-  }
 
-  /**
-   * 处理子节点
-  */
+export interface VFragment extends VNode {
 
-  setChildren() {
-    if (!this.fragment || this.children === undefined || this.children === null) return
-    if (!Array.isArray(this.children)) this.children = [this.children]
-    this.VNodeChildren = setNodeChildren(this.parentVNode!, this.children)
-  }
+  // 虚拟节点类型
+  type: symbol,
 
-  // 创建并初始化真实节点
-  createRNode(): void {
-    if (this.fragment) return // 如果已经初始化过则不要再初始化
-    this.fragment = document.createDocumentFragment() as unknown as HTMLElement
-    // 处理标签子节点
-    this.setChildren()
-  }
+  // 虚拟节点属性
+  props: null,
 
-  mount() {
-    this.parentVNode?.getRNode().appendChild(this.getRNode())
-    this.parentVNode?.getRNode().appendChild(this.pivot.getRNode())
-  }
+  // 虚拟节点子节点
+  children: Array<Activer | VNode | string>,
 
-  replaceWith(node: ChildVNode) {
-    this.remove()
-    this.parentVNode?.getRNode().insertBefore(node.getRNode(), this.pivot.getRNode())
-    if (node instanceof FragmentVNode) {
-      node.pivot = this.pivot
-    } else if (node instanceof ComponentVNode) {
-      let ef = node.getComponent().getEFVNode()
-      if (ef instanceof FragmentVNode) {
-        ef.pivot = this.pivot
-      }
-    }
-    else {
-      this.pivot.remove()
-    }
-  }
+  // 虚拟节点表标识
+  flag: VNODE_TYPE.FRAGMENT
 
-  remove() {
-    this.VNodeChildren.forEach(node => node.remove())
-  }
+  // 锚点
+  anchor: Text,
+  el: Text
 
 }

@@ -45,6 +45,11 @@ export function isObject(content: unknown): content is object {
 }
 
 
+export function isArray(content: unknown): content is Array<any> {
+  return Array.isArray(content)
+}
+
+
 
 
 

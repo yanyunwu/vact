@@ -1,6 +1,6 @@
 export const ArrayNode = Symbol('ArrayNode');
 
-import { Activer } from "../reactive/active";
+import { Activer } from "../reactive";
 import { VNode, VNODE_TYPE } from "./vnode";
 
 
@@ -16,7 +16,7 @@ export interface VArrayNode extends VNode {
   children: Array<Activer | VNode | string>,
 
   // 虚拟节点表标识
-  flag: VNODE_TYPE.ArrayNode
+  flag: VNODE_TYPE.ARRAYNODE
 
   // 锚点
   anchor: Text,

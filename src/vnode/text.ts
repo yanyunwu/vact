@@ -1,56 +1,22 @@
-import { ChildVNode } from "../children"
-import { VNode } from "./baseNode"
-import { ComponentVNode } from "./component"
-import { FragmentVNode } from "./fragment"
+import { VNode, VNODE_TYPE } from "./vnode";
 
-export class TextVNode extends VNode {
-  type: number = VNode.TEXT
-  text: string
-  textNode?: HTMLElement
 
-  constructor(text: string) {
-    super()
-    this.text = text
-  }
+export const Text = Symbol('Text');
 
-  getRNode(): HTMLElement {
-    return this.textNode!
-  }
+export interface VText extends VNode {
 
-  // 创建并初始化真实节点
-  createRNode(): void {
-    this.textNode = document.createTextNode(this.text) as unknown as HTMLElement
-  }
+  // 虚拟节点类型
+  type: symbol,
 
-  mount() {
-    this.parentVNode?.getRNode().appendChild(this.getRNode())
-  }
+  // 虚拟节点属性
+  props?: null,
 
-  replaceWith(node: ChildVNode) {
-    if (node instanceof TextVNode) {
-      this.getRNode().nodeValue = node.getRNode().nodeValue
-      node.textNode = this.textNode
-      return
-    }
+  // 虚拟节点子节点
+  children: string,
 
-    if (node instanceof FragmentVNode) {
-      this.parentVNode?.getRNode().insertBefore(node.getRNode(), this.getRNode())
-      this.getRNode().replaceWith(node.pivot.getRNode())
-    } else if (node instanceof ComponentVNode) {
-      let ef = node.getComponent().getEFVNode()
-      if (ef instanceof FragmentVNode) {
-        this.parentVNode?.getRNode().insertBefore(node.getRNode(), this.getRNode())
-        this.getRNode().replaceWith(ef.pivot.getRNode())
-      } else {
-        this.parentVNode?.getRNode().replaceChild(node.getRNode(), this.getRNode())
-      }
-    }
-    else {
-      this.parentVNode?.getRNode().replaceChild(node.getRNode(), this.getRNode())
-    }
-  }
+  // 虚拟节点表标识
+  flag: VNODE_TYPE.TEXT
 
-  remove() {
-    this.textNode?.remove()
-  }
+  el?: Text
+
 }

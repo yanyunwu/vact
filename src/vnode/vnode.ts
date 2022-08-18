@@ -1,4 +1,4 @@
-import { Activer } from "../reactive/active"
+import { Activer } from "../reactive"
 import { Component } from './component'
 
 /**
@@ -9,9 +9,9 @@ export enum VNODE_TYPE {
   ELEMENT,
   // 文本节点类型
   TEXT,
-  Fragment,
-  Component,
-  ArrayNode
+  FRAGMENT,
+  COMPONENT,
+  ARRAYNODE
 }
 
 /**

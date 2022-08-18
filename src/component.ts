@@ -1,21 +1,17 @@
-import { ComponentVNode, ElementVNode, SlotVNode } from "./vnode";
-import { SubComponent } from "./vnode/type";
-import { DataProxy } from './proxy'
-import { createNode, SubConstructor } from "./utils";
-import { FragmentVNode } from "./vnode/fragment";
+import { defineState } from "./reactive"
+import { H } from './render'
+import { VNode } from "./vnode/vnode"
 
 /**
- * 根组件
+ * 根类组件(向下兼容)
+ * 已废弃
 */
 
 interface Config {
-  data?: {
-    [key: string | symbol]: any
-  },
+  data?: Record<string | symbol, any>
 }
 
 export abstract class Component {
-
   // 组件配置
   private config: Config
   // 组件响应式数据
@@ -23,69 +19,12 @@ export abstract class Component {
   // 组件属性
   props?: Record<any, any>
   // 组件子元素
-  children?: Record<string, SlotVNode>
-  // 组件挂载的根虚拟节点
-  efVNode?: ElementVNode | FragmentVNode
-  // 类组件标识符
-  classComponent!: boolean;
+  children?: Record<string, any>
 
   constructor(config: Config = {}) {
     this.config = config
-    // 设置响应式数据对象
-    this.data = new DataProxy(this.config.data || {}).getData()
+    this.data = defineState(config.data || {})
   }
 
-  setProps(props: {}) {
-    this.props = props
-  }
-
-  setChildren(children: Record<string, SlotVNode>) {
-    this.children = children
-  }
-
-  abstract render(h: (nodeTag: string | SubConstructor | symbol, props?: Record<any, any>, children?: any[]) => ElementVNode | ComponentVNode | FragmentVNode): ElementVNode | ComponentVNode | FragmentVNode
-
-  createEFVNode(): ElementVNode | FragmentVNode {
-    if (this.efVNode) return this.efVNode
-    let renderOut = this.render(createNode)
-    if (renderOut instanceof ComponentVNode) {
-      // renderOut = renderOut.createComponent().createEFVNode()
-      renderOut.createRNode()
-      let com = renderOut.getComponent()
-      renderOut = com.getEFVNode()
-    }
-    return this.efVNode = renderOut
-  }
-
-  getEFVNode(): ElementVNode | FragmentVNode {
-    return this.efVNode!
-  }
+  abstract render(h: H): VNode
 }
-
-Component.prototype.classComponent = true
-
-/**
- * 解决函数式组件的类
-*/
-export class FunComponent extends Component implements SubComponent {
-  renderFun?: (props?: Record<any, any>, children?: Record<string, SlotVNode>) => ElementVNode
-  setRenderFun(fun: (props?: Record<any, any>, children?: Record<string, SlotVNode>) => ElementVNode) {
-    this.renderFun = fun
-  }
-
-  constructor() {
-    super()
-  }
-
-  render(): ElementVNode {
-    return this.renderFun!.call(this, this.props, this.children)
-  }
-}
-
-
-
-
-
-
-
-
