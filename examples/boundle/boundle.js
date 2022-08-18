@@ -307,7 +307,7 @@
   function watchVNode(activeVNode, callback) {
       let watcher = new Watcher(activeVNode, function (oldVNode, newVNode) {
           if (!isVNode(newVNode)) {
-              if (!newVNode)
+              if (!newVNode && typeof newVNode !== 'number')
                   newVNode = render(Text, null, '');
               else if (Array.isArray(newVNode)) {
                   newVNode = render(ArrayNode, null, newVNode);
@@ -321,7 +321,7 @@
       });
       if (isVNode(watcher.value))
           return watcher.value;
-      if (!watcher.value)
+      if (!watcher.value && typeof watcher.value !== 'number')
           watcher.value = render(Text, null, '');
       else if (Array.isArray(watcher.value)) {
           watcher.value = render(ArrayNode, null, watcher.value);
@@ -389,7 +389,7 @@
               mountChildren(child, container, anchor);
           }
           else {
-              mount(render(Text, null, child ? String(child) : ''), container, anchor);
+              mount(render(Text, null, child || typeof child === 'number' ? String(child) : ''), container, anchor);
           }
       });
   }

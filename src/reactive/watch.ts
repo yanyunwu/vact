@@ -49,7 +49,7 @@ export type RowChildType = VNode | null | Array<VNode>
 export function watchVNode(activeVNode: Activer<RowChildType>, callback: (oldVNode: VNode, newVNode: VNode) => void): VNode {
   let watcher = new Watcher<RowChildType>(activeVNode, function (oldVNode: RowChildType, newVNode: RowChildType) {
     if (!isVNode(newVNode)) {
-      if (!newVNode) newVNode = render(Text, null, '')
+      if (!newVNode && typeof newVNode !== 'number') newVNode = render(Text, null, '')
       else if (Array.isArray(newVNode)) {
         newVNode = render(ArrayNode, null, newVNode)
       } else {
@@ -62,7 +62,7 @@ export function watchVNode(activeVNode: Activer<RowChildType>, callback: (oldVNo
 
   if (isVNode(watcher.value)) return watcher.value
 
-  if (!watcher.value) watcher.value = render(Text, null, '')
+  if (!watcher.value && typeof watcher.value !== 'number') watcher.value = render(Text, null, '')
   else if (Array.isArray(watcher.value)) {
     watcher.value = render(ArrayNode, null, watcher.value)
   } else {

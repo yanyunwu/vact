@@ -1,6 +1,6 @@
 import { track, trigger } from './reactive'
 
-class RefImpl<T = any> {
+export class RefImpl<T = any> {
   private _value: T
 
   constructor(value: T) {

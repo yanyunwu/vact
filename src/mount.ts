@@ -61,7 +61,7 @@ export function mountChildren(children: Array<Activer | VNode | string>, contain
     } else if (isArray(child)) {
       mountChildren(child, container, anchor)
     } else {
-      mount(render(Text, null, child ? String(child) : ''), container, anchor)
+      mount(render(Text, null, child || typeof child === 'number' ? String(child) : ''), container, anchor)
     }
   })
 }

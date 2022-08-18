@@ -1,232 +1,115 @@
-import { EventEmitter } from 'events';
-
-declare type ParentVNode = ElementVNode;
-declare type ChildVNode = TextVNode | ElementVNode | ComponentVNode | FragmentVNode | ArrayVNode;
-declare type BaseChildVNode = string | ElementVNode | ComponentVNode | FragmentVNode | ArrayVNode | Array<string | ElementVNode | ComponentVNode | FragmentVNode>;
-declare type RBaseChildVNode = BaseChildVNode | (() => BaseChildVNode);
-
 /**
- * 数据响应式中心
+ * 响应式对象
 */
+declare class Activer<T = any> {
+    callback: () => T;
+    flag: string;
+    constructor(fn: () => T);
+    get value(): T;
+}
+
+declare class RefImpl<T = any> {
+    private _value;
+    constructor(value: T);
+    get value(): T;
+    set value(value: T);
+}
+declare function ref<T extends any>(value: T): RefImpl<T>;
+
+declare function state<T extends any>(value: T): RefImpl<T>;
+declare function defineState<T extends Record<string | symbol, any>>(target: T): T;
+
 /**
- * 数据事件存放处
+ * 传说中的render函数
 */
-declare class DataEventProxy {
-    private valueMap;
-    constructor();
-    getProp(target: Record<any, any>, prop: any): PropValue;
-    getEventProxy(target: Record<any, any>): Record<any, any>;
-    setEventProxy(target: Record<any, any>, valueTarget: Record<any, any>): void;
+declare type ComponentConstructor = new (props: Record<string, any>, children: Array<any> | string) => Component$1 | VNode;
+declare type H = (type: string | symbol | ComponentConstructor, props?: Record<string, any> | null, children?: Array<any> | string) => VNode;
+declare function render(type: string | symbol | ComponentConstructor, props?: Record<string, any> | null, children?: Array<any> | string): VNode;
+
+interface Component$1 {
+    props: Record<string, any>;
+    children: Array<Activer | VNode | string>;
+    render(h?: H): VNode;
 }
+
 /**
- * 监控数据响应变化处
+ * 虚拟dom节点类型枚举
 */
-declare class DataProxy<T extends object> {
-    private target;
-    private data;
-    private dataProxyValue;
-    constructor(data: T);
-    getData(): T;
-    getTarget(): T;
-    getEventProxy(): DataEventProxy;
-    private replaceProps;
+declare enum VNODE_TYPE {
+    ELEMENT = 0,
+    TEXT = 1,
+    FRAGMENT = 2,
+    COMPONENT = 3,
+    ARRAYNODE = 4
 }
-
-declare class PropValue extends EventEmitter {
-    value: any;
-    private dep;
-    dataProxy?: DataProxy<object>;
-    constructor(value: any, dataProxy?: DataProxy<object>);
-    setDep(watcher: Watcher): void;
-    valueOf(): any;
-    toString(): any;
-    set(value: any): void;
-    get(): any;
-    notify(): void;
-}
-declare class Watcher {
-    fn: () => void;
-    running: boolean;
-    constructor(fn: () => void);
-    update(): void;
-}
-
-declare abstract class VNode {
-    parentVNode?: ElementVNode;
-    abstract type: number;
-    static ELEMENT: number;
-    static TEXT: number;
-    static COMPONENT: number;
-    static FRAGMENT: number;
-    abstract getRNode(): HTMLElement | Text;
-    setParentVNode(parent?: ElementVNode): void;
-    propValues?: Array<PropValue>;
-    fn?: () => void;
-    abstract createRNode(): void;
-    setDeps(propValues: Array<PropValue>, fn: () => void): void;
-    bindDeps(): void;
-    abstract mount(): void;
-    abstract replaceWith(node: ChildVNode): void;
-}
-
-declare class ElementVNode extends VNode {
-    tag: string;
-    props?: {
-        [key: string]: any;
-    };
-    children?: Array<RBaseChildVNode>;
-    type: number;
-    ele?: HTMLElement;
-    constructor(tag: string, props?: Record<any, any>, children?: any[]);
-    getRNode(): HTMLElement;
-    /**
-     * 处理原生node节点的属性绑定
-    */
-    setProps(): void;
-    createRNode(): void;
-    mount(): void;
-    replaceWith(node: ChildVNode): void;
-    remove(): void;
-}
-
-declare class TextVNode extends VNode {
-    type: number;
-    text: string;
-    textNode?: HTMLElement;
-    constructor(text: string);
-    getRNode(): HTMLElement;
-    createRNode(): void;
-    mount(): void;
-    replaceWith(node: ChildVNode): void;
-    remove(): void;
-}
-
-declare class FragmentVNode extends VNode {
-    type: number;
-    props?: {
-        [key: string]: any;
-    };
-    children?: Array<RBaseChildVNode>;
-    fragment?: HTMLElement;
-    VNodeChildren: Array<ChildVNode>;
-    pivot: TextVNode;
-    constructor(props?: Record<any, any>, children?: any[]);
-    getRNode(): HTMLElement;
-    /**
-     * 处理子节点
-    */
-    setChildren(): void;
-    createRNode(): void;
-    mount(): void;
-    replaceWith(node: ChildVNode): void;
-    remove(): void;
-}
-
-declare class SlotVNode {
-    children: Array<BaseChildVNode>;
-    constructor(children: Array<BaseChildVNode>);
-}
-
-interface SubComponent {
-    createEFVNode(): ElementVNode | FragmentVNode;
-    setProps(props: {}): void;
-    setChildren(children: Record<string, SlotVNode>): void;
-    getEFVNode(): ElementVNode | FragmentVNode;
-}
-
 /**
- * 组件节点
+ * 虚拟dom接口类型
 */
-interface SubComponentConstructor {
-    new (): SubComponent;
+interface VNode {
+    type: string | symbol | Component$1;
+    props?: Record<string, any> | null;
+    children?: Array<Activer | VNode | string> | string;
+    flag: VNODE_TYPE;
+    el?: HTMLElement | Text;
 }
-declare type FunComponentType = (props?: Record<any, any>, children?: Record<string, SlotVNode>) => ElementVNode;
-declare type ComponentConstructor = SubComponentConstructor | FunComponentType;
-declare class ComponentVNode extends VNode {
-    type: number;
-    component?: SubComponent;
-    Constructor: ComponentConstructor;
-    props?: Record<any, any>;
-    children?: RBaseChildVNode[];
-    constructor(Constructor: ComponentConstructor, props?: Record<any, any>, children?: RBaseChildVNode[]);
-    setComponentProps(): Record<any, any>;
-    setComponentChildren(): Record<string, SlotVNode>;
-    getComponent(): SubComponent;
-    getRNode(): HTMLElement;
-    createRNode(): void;
-    mount(): void;
-    replaceWith(node: ChildVNode): void;
-    remove(): void;
-}
-
-declare class ArrayVNode extends VNode {
-    readonly type: number;
-    props: Record<any, any>;
-    bnodeList: Array<string | ElementVNode | ComponentVNode | FragmentVNode>;
-    nodeList: Array<TextVNode | ElementVNode | ComponentVNode | FragmentVNode>;
-    fragment?: HTMLElement;
-    pivot: TextVNode;
-    constructor(props: Record<any, any>, bnodeList: Array<string | ElementVNode | ComponentVNode | FragmentVNode>);
-    setParentVNode(parent?: ParentVNode): void;
-    getRNode(): HTMLElement;
-    createRNode(): void;
-    mount(): void;
-    replaceWith(node: ChildVNode): void;
-    remove(): void;
-}
-
-interface StateConfig {
-    deep?: boolean;
-}
-declare class State<T extends object> {
-    private dataProxy;
-    private config?;
-    constructor(data: T, config?: StateConfig);
-    get data(): T;
-    watch(path: string, fn: (value: any) => void): void;
-}
-
-declare function defineState(data: Record<string | number | symbol, any>, config?: StateConfig): State<Record<string | number | symbol, any>>;
-declare function mount(selector: string, rootNode: Component | ComponentVNode): void;
-declare type SubConstructor = new () => SubComponent;
-declare function createNode(nodeTag: string | SubConstructor | symbol, props?: Record<any, any>, children?: any[]): ElementVNode | ComponentVNode | FragmentVNode;
 
 /**
- * 根组件
+ * 观察者
+ * 观察数据的变化
+*/
+declare class Watcher<T = any> {
+    value: T;
+    callback: (oldValue: T, newValue: T) => void;
+    activeProps: Activer<T>;
+    constructor(activeProps: Activer<T>, callback: (oldValue: T, newValue: T) => void);
+    update(targetPropOldValue: any, targetPropnewValue: any): void;
+}
+/**
+ * 监控自定义响应式属性
+*/
+declare function watch<T = any>(activeProps: (() => T) | Activer<T>, callback: (oldValue: T, newValue: T) => void): Watcher<T>;
+/**
+ * 监控可变状态dom
+*/
+declare type RowChildType = VNode | null | Array<VNode>;
+declare function watchVNode(activeVNode: Activer<RowChildType>, callback: (oldVNode: VNode, newVNode: VNode) => void): VNode;
+/**
+ * 监控可变dom的prop
+*/
+declare function watchProp(activeProp: Activer, callback: (oldVNode: VNode, newVNode: VNode) => void): any;
+
+/**
+ * 实现响应式对象
+*/
+declare function reactive<T extends Record<string | symbol, any>>(target: T): T;
+
+declare const Fragment: unique symbol;
+
+declare const Text$1: unique symbol;
+
+declare function mount(vnode: VNode, container: HTMLElement, anchor?: HTMLElement): void;
+
+/**
+ * 根类组件(向下兼容)
+ * 已废弃
 */
 interface Config {
-    data?: {
-        [key: string | symbol]: any;
-    };
+    data?: Record<string | symbol, any>;
 }
 declare abstract class Component {
     private config;
     data: Record<any, any>;
     props?: Record<any, any>;
-    children?: Record<string, SlotVNode>;
-    efVNode?: ElementVNode | FragmentVNode;
-    classComponent: boolean;
+    children?: Record<string, any>;
     constructor(config?: Config);
-    setProps(props: {}): void;
-    setChildren(children: Record<string, SlotVNode>): void;
-    abstract render(h: (nodeTag: string | SubConstructor | symbol, props?: Record<any, any>, children?: any[]) => ElementVNode | ComponentVNode | FragmentVNode): ElementVNode | ComponentVNode | FragmentVNode;
-    createEFVNode(): ElementVNode | FragmentVNode;
-    getEFVNode(): ElementVNode | FragmentVNode;
+    abstract render(h: H): VNode;
 }
 
 declare class Vact {
-    static Fragment: symbol;
-    private static depPool;
-    static getDepPool(): any[];
-    private static updating;
-    private static watcherTask;
-    static runTask(fn: Function): void;
-    static Component: any;
-    static mount: typeof mount;
-    static createNode: typeof createNode;
+    rootVNode: VNode;
+    constructor(vnode: VNode, options?: Record<string, any>);
+    mount(selector: string): void;
 }
+declare function createApp(vnode: VNode, options?: Record<string, any>): Vact;
 
-declare const h: typeof createNode;
-declare const Fragment: symbol;
-
-export { Component, Fragment, createNode, Vact as default, defineState, h, mount };
+export { Activer, Component, Fragment, Text$1 as Text, createApp, render as createVNode, Vact as default, defineState, mount, reactive, ref, render, state, watch, watchProp, watchVNode };

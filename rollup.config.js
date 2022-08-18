@@ -13,27 +13,27 @@ import { terser } from 'rollup-plugin-terser';
 const config = {
   input: "index.ts", // 入口文件
   output: [
-    // {
-    //   file: "lib/boundle.js",    // 必须
-    //   format: "cjs",  // 必须
-    //   sourcemap: true
-    // },
+    {
+      file: "lib/boundle.js",    // 必须
+      format: "cjs",  // 必须
+      sourcemap: true
+    },
     {
       file: "examples/boundle/boundle.js",    // 必须
       format: 'umd',
       name: 'Vact'
     },
-    // {
-    //   file: "lib/boundle.umd.js",    // 必须
-    //   format: 'umd',
-    //   name: 'Vact',
-    //   sourcemap: true
-    // },
-    // {
-    //   file: "lib/bundle.esm.js",
-    //   format: "es",
-    //   sourcemap: true
-    // }
+    {
+      file: "lib/boundle.umd.js",    // 必须
+      format: 'umd',
+      name: 'Vact',
+      sourcemap: true
+    },
+    {
+      file: "lib/bundle.esm.js",
+      format: "es",
+      sourcemap: true
+    }
   ],
 
   plugins: [
