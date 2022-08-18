@@ -1,6 +1,6 @@
 # vact
 
-创世纪前端响应式新框架
+借鉴加创新的前端响应式框架
 
 [![OSCS Status](https://www.oscs1024.com/platform/badge/yanyunwu/vact.svg?size=small)](https://www.oscs1024.com/project/yanyunwu/vact?ref=badge_small)
 
@@ -27,54 +27,98 @@
 
 
 
+***如果想快速体验，请看下面webpack章节中的demo，直接运行demo查看***
+
+
+
+**babel依赖(最好配合webpack使用)：**
+
+`@babel/core`
+
+`@babel/preset-env`
+
+`babel-loader`
+
+`babel-plugin-syntax-jsx`
+
+`babel-plugin-transform-vact-jsx`
+
+
+
 ## 快速使用
 
 ```jsx
-import { Component, mount, createNode, defineState } from 'vactapp'
+import { createApp, state } from 'vactapp'
 
-const state = defineState({
+const $data = {
   count: 0,
   color: 'red'
-})
-
-class App extends Component {
-  render() {
-    return <div>
-      <h1 style={{ color: state.data.color }}>hello world!</h1>
-      <div onClick={() => state.data.color = 'blue'}><button>改变颜色</button></div>
-      <div>
-        <span>计数器</span>
-        <button onClick={() => state.data.count++}>增加</button>
-        {state.data.count}
-        <button onClick={() => state.data.count--}>减少</button>
-      </div>
-    </div>
-  }
 }
 
-mount('#app', new App())
+let show = state(true)
+
+const head = <>
+  <h1 style={{ color: $data.color }}>hello world!</h1>
+  <div onClick={() => $data.color = 'blue'}><button>改变颜色</button></div>
+</>
+
+const bottom = <>
+  <span>底部显示</span>
+</>
+
+const app = <div id='app'>
+  {head}
+  <div>
+    <span>计数器</span>
+    <button onClick={() => $data.count++}>增加</button>
+    {$data.count}
+    <button onClick={() => $data.count--}>减少</button>
+  </div>
+  {show.value && bottom}
+  <div><button onClick={() => show.value = !show.value}>切换显示</button></div>
+</div>
+
+createApp(app).mount('#app')
 ```
 
 
 
 ## 响应式
 
-defineState只是一个定义状态的api
-
-每个组件在初始化会自动生成一个响应式对象
+通过`defineState`和`state`定义响应式对象
 
 ```jsx
-class App extends Component {
-    constructor() {
-        super({
-            data: {
-                name: "小明"
-            }
-        })
-        
-        this.data.name // 此时this.data是响应式 和上面的state.data一样
-    }
+import { defineState, state, createApp } from 'vactapp'
+
+const data = defineState({
+  text: 'hello'
+})
+
+const text = state('world!')
+
+const app = <><span>{data.text}</span> <span>{text.value}</span></>
+
+createApp(<div>{app}</div>).mount('#app')
+```
+
+
+
+### babel解析响应式对象
+
+你可能会好奇为什么第一个例子的$data对象只是单纯的一个对象
+
+事实上，在我写的babel插件中会自动把以$开头的且内容为对象的变量转义为`defineState`
+
+```js
+const $data = {
+  count: 0,
+  color: 'red'
 }
+// 等同于
+const $data = defineState({
+  count: 0,
+  color: 'red'
+})
 ```
 
 
@@ -83,8 +127,26 @@ class App extends Component {
 
 如果使用创建节点的api去写的话会比较麻烦，所以这边推荐使用jsx语法
 
-**babel插件**：babel-plugin-syntax-jsx      
-babel-plugin-transform-vact-jsx（翻译vact的babel）
+**babel插件**：
+
+`babel-plugin-syntax-jsx   `
+
+`babel-plugin-transform-vact-jsx`（翻译vact的babel）
+
+
+
+### demo
+
+master分支中demo文件中的demo1目录是已经配好的脚手架环境
+
+#### 使用：
+
+`yarn install` or `npm i`
+
+`yarn dev` or `npm run dev`
+
+完成以上命令行后会自动打开浏览器
+
 
 
 ### webapck配置
@@ -151,7 +213,7 @@ module.exports = {
 - dist
 - src
 	- index.html
-	- index.jsx
+	- app.jsx
 - package.json
 - webpack.config.js
 ```
@@ -160,25 +222,26 @@ module.exports = {
 
 
 
-## 函数式组件
+## 组件说明
+
+组件可以用一个类或者一个函数声明
+
+
+
+### 使用类声明组件
+
+必须有一个render函数， 返回一个根节点（可以为fragment）
 
 ```jsx
-function Button(props, children) {
-    return <button onClick={props.onClick} >{children[0]}</button>
-}
-
-let Button2 = (props, children) => <button onClick={props.onClick} >{children[0]}</button>
-
-class App extends Component {
+class App {
     constructor() {
-        super({
-            data: {
-                count: 0
-            }
-        })
+       this.data = defineState({
+           count: 0
+       })
     }
     
     render() {
+        console.log(this.props, this.children)
         return <div>
             {this.data.count}
             <Button onClick={() => this.data.count++} >增加</Button>
@@ -192,4 +255,82 @@ class App extends Component {
 
 
 
+### 使用函数声明
+
+```js
+function Button(props, children) {
+  return <><button onClick={props.onChange}>{props.text}</button></>
+}
+const text = state('哈哈哈')
+const app = <div><Button text={text.value} onChange={() => text.value = '123'}></Button></div>
+
+createApp(app).mount('#app')
+```
+
+
+
+## 插槽
+
+插槽将作为children传入
+
+```js
+function Text(props, children) {
+  return <>{children}</>
+}
+const show = state(true)
+const app = <div>
+  <Text>
+    {show.value && <span>hello</span>}
+    <span>world</span>
+  </Text>
+</div>
+
+setInterval(() => {
+  show.value = !show.value
+}, 1000);
+
+createApp(app).mount('#app')
+```
+
+
+
+### 具名插槽
+
+这边不太建议使用children来实现具名插槽，也不是不行
+
+更推荐使用props实现
+
+```js
+function Text(props, children) {
+  const slots = props.slots
+  return <>
+    <div>**{slots.head}**</div>
+    <div>**{slots.middle}**</div>
+    <div>**{slots.bottom}**</div>
+  </>
+}
+const $slots = {
+  head: <span>头部</span>,
+  middle: <span>中部</span>,
+  bottom: <span>底部</span>
+}
+const app = <div>
+  <Text slots={$slots}></Text>
+  <div>
+    <button onClick={() => {
+      console.log($slots.middle = null);
+    }}>中部消失</button>
+  </div>
+</div>
+
+createApp(app).mount('#app')
+```
+
+
+
 **后序：用法和jsx原本语法差不多，但也有很多不同的地方**
+
+如果你有更好的想法或者建议，请随时call我，本人目前大二马上大三，菜比一枚，可以共同进步交流
+
+qq:2480721346
+
