@@ -1,4 +1,4 @@
-import { isObjectExact } from "../utils"
+import { isObjectExact, isVNode } from "../utils"
 import { Watcher } from "./watch"
 
 // 目标对象到映射对象
@@ -18,7 +18,7 @@ export function reactive<T extends Record<string | symbol, any>>(target: T): T {
       if (prop === REACTIVE) return true
       const res = Reflect.get(target, prop, receiver)
 
-      if (isObjectExact(res)) {
+      if (isObjectExact(res) && !isVNode(res)) {
         return reactive(res)
       }
 
