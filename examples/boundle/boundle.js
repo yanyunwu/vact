@@ -21,61 +21,6 @@
       VNODE_TYPE[VNODE_TYPE["ALIVE"] = 5] = "ALIVE";
   })(VNODE_TYPE || (VNODE_TYPE = {}));
 
-  function isSameVNode(oldVNode, newVNode) {
-      return oldVNode.flag === newVNode.flag;
-  }
-  function patch(oldVNode, newVNode, container) {
-      var _a, _b;
-      // 如果两个节点引用一样不需要判断
-      if (oldVNode === newVNode)
-          return;
-      // 这里在判断相同类型的节点后可以做进一步优化
-      if (isSameVNode(oldVNode, newVNode)) {
-          let flag = oldVNode.flag = newVNode.flag;
-          if (flag === VNODE_TYPE.TEXT) {
-              patchText(oldVNode, newVNode);
-          }
-          else if (flag === VNODE_TYPE.ARRAYNODE) {
-              patchArrayNode(oldVNode, newVNode, container);
-          }
-          else {
-              const nextSibling = (_a = oldVNode === null || oldVNode === void 0 ? void 0 : oldVNode.el) === null || _a === void 0 ? void 0 : _a.nextSibling;
-              unmount(oldVNode);
-              mount(newVNode, container, nextSibling);
-          }
-      }
-      else {
-          const nextSibling = (_b = oldVNode === null || oldVNode === void 0 ? void 0 : oldVNode.el) === null || _b === void 0 ? void 0 : _b.nextSibling;
-          unmount(oldVNode);
-          mount(newVNode, container, nextSibling);
-      }
-  }
-  function patchText(oldVNode, newVNode, container) {
-      oldVNode.el.nodeValue = newVNode.children;
-      newVNode.el = oldVNode.el;
-  }
-  function patchElementProp(oldValue, newValue, el, prop) {
-      setElementProp(el, prop, newValue);
-  }
-  function patchArrayNode(oldVNode, newVNode, container) {
-      const oldDepArray = oldVNode.depArray;
-      newVNode.depArray;
-      const oldChildren = oldVNode.children;
-      newVNode.children;
-      // console.log(oldVNode.children);
-      let map = new Map();
-      oldDepArray.forEach((item, index) => map.set(item, oldChildren[index]));
-      // let anchor = oldChildren[0].
-      // newChildren.forEach(item => {
-      //   if(map.has(item)){
-      //     let 
-      //   }
-      // })
-      const nextSibling = oldVNode.el.nextSibling;
-      unmount(oldVNode);
-      mount(newVNode, container, nextSibling);
-  }
-
   const FragmentSymbol = Symbol('Fragment');
 
   const TextSymbol = Symbol('Text');
@@ -114,6 +59,26 @@
   }
   function isArray(content) {
       return Array.isArray(content);
+  }
+
+  let updating = false;
+  const watcherTask = [];
+  function runUpdate(watcher, oldValue, newValue) {
+      if (watcherTask.includes(watcher))
+          return;
+      watcherTask.push(watcher);
+      if (!updating) {
+          updating = true;
+          Promise.resolve()
+              .then(() => {
+              let watcher = undefined;
+              while (watcher = watcherTask.shift()) {
+                  watcher.update(oldValue, newValue);
+              }
+          }).finally(() => {
+              updating = false;
+          });
+      }
   }
 
   // 目标对象到映射对象
@@ -184,7 +149,8 @@
       let mappingProp = mapping[prop];
       if (!mappingProp)
           return;
-      mappingProp.forEach(watcher => watcher.update(oldValue, newValue));
+      // mappingProp.forEach(watcher => watcher.update(oldValue, newValue))
+      mappingProp.forEach(watcher => runUpdate(watcher, oldValue, newValue));
   }
   /**
    * 追踪绑定依赖
@@ -203,6 +169,30 @@
   // 设置全局变量
   function setActiver(fn) {
       activeWatcher = fn;
+  }
+
+  class RefImpl {
+      constructor(value) {
+          this._value = value;
+      }
+      get value() {
+          track(this, 'value');
+          return this._value;
+      }
+      set value(value) {
+          this._value = value;
+          trigger(this, 'value');
+      }
+  }
+  function ref(value) {
+      return new RefImpl(value);
+  }
+
+  function state(value) {
+      return ref(value);
+  }
+  function defineState(target) {
+      return reactive(target);
   }
 
   /**
@@ -414,123 +404,15 @@
       return new Watcher(activeProp, callback).value;
   }
 
-  function mount(vnode, container, anchor) {
-      switch (vnode.flag) {
-          case VNODE_TYPE.ELEMENT:
-              mountElement(vnode, container, anchor);
-              break;
-          case VNODE_TYPE.TEXT:
-              mountText(vnode, container, anchor);
-              break;
-          case VNODE_TYPE.FRAGMENT:
-              mountFragment(vnode, container, anchor);
-              break;
-          case VNODE_TYPE.ARRAYNODE:
-              mountArrayNode(vnode, container, anchor);
-              break;
-          case VNODE_TYPE.COMPONENT:
-              mountComponent(vnode, container, anchor);
-              break;
-          case VNODE_TYPE.ALIVE:
-              mountAlive(vnode, container, anchor);
-              break;
-      }
-  }
-  function unmount(vnode, container) {
-      switch (vnode.flag) {
-          case VNODE_TYPE.ELEMENT:
-              unmountElement(vnode);
-              break;
-          case VNODE_TYPE.TEXT:
-              unmountText(vnode);
-              break;
-          case VNODE_TYPE.FRAGMENT:
-              unmountFragment(vnode);
-              break;
-          case VNODE_TYPE.ARRAYNODE:
-              unmountArrayNode(vnode);
-              break;
-          case VNODE_TYPE.COMPONENT:
-              unmountComponent(vnode);
-              break;
-      }
-  }
-  function mountChildren(children, container, anchor) {
-      children.forEach(child => mount(child, container, anchor));
-      // children.forEach((child, index) => {
-      //   if (isActiver(child)) {
-      //     let firstVNode = watchVNode(child, (oldVNode, newVNode) => patch(oldVNode, newVNode, container))
-      //     mount(firstVNode, container, anchor)
-      //   } else if (isVNode(child)) {
-      //     mount(child, container, anchor)
-      //   } else if (isArray(child)) {
-      //     mountChildren(child, container, anchor)
-      //   } else {
-      //     let node = render(Text, null, child || typeof child === 'number' ? String(child) : '')
-      //     children[index] = node
-      //     mount(node, container, anchor)
-      //   }
-      // })
-  }
-  function mountElement(vnode, container, anchor) {
+  function mountElement(vnode, container, anchor, app) {
       const el = document.createElement(vnode.type);
       vnode.el = el;
       mountElementProps(vnode);
-      mountChildren(vnode.children, el);
+      mountChildren(vnode.children, el, undefined, app);
       container.insertBefore(el, anchor);
   }
   function unmountElement(vnode, container) {
-      var _a;
-      (_a = vnode.el) === null || _a === void 0 ? void 0 : _a.remove();
-  }
-  function mountText(vnode, container, anchor) {
-      const el = document.createTextNode(vnode.children);
-      vnode.el = el;
-      container.insertBefore(el, anchor);
-  }
-  function unmountText(vnode, container) {
-      var _a;
-      (_a = vnode.el) === null || _a === void 0 ? void 0 : _a.remove();
-  }
-  function mountFragment(vnode, container, anchor) {
-      const start = document.createTextNode('');
-      const end = document.createTextNode('');
-      vnode.anchor = start;
-      vnode.el = end;
-      container.insertBefore(start, anchor);
-      mountChildren(vnode.children, container, anchor);
-      container.insertBefore(end, anchor);
-  }
-  function unmountFragment(vnode, container) {
-      const start = vnode.anchor;
-      const end = vnode.el;
-      let cur = start;
-      while (cur && cur !== end) {
-          let next = cur.nextSibling;
-          cur.remove();
-          cur = next;
-      }
-      end.remove();
-  }
-  function mountArrayNode(vnode, container, anchor) {
-      const start = document.createTextNode('');
-      const end = document.createTextNode('');
-      vnode.anchor = start;
-      vnode.el = end;
-      container.insertBefore(start, anchor);
-      mountChildren(vnode.children, container, anchor);
-      container.insertBefore(end, anchor);
-  }
-  function unmountArrayNode(vnode, container, anchor) {
-      const start = vnode.anchor;
-      const end = vnode.el;
-      let cur = start;
-      while (cur && cur !== end) {
-          let next = cur.nextSibling;
-          cur.remove();
-          cur = next;
-      }
-      end.remove();
+      vnode.el.remove();
   }
   function mountElementProps(vnode) {
       let el = vnode.el;
@@ -579,43 +461,243 @@
       }
       return styleStringList.join('');
   }
-  function mountComponent(vnode, container, anchor) {
+
+  function isSameVNode(oldVNode, newVNode) {
+      return oldVNode.flag === newVNode.flag;
+  }
+  function patch(oldVNode, newVNode, container, app) {
+      var _a, _b;
+      // 如果两个节点引用一样不需要判断
+      if (oldVNode === newVNode)
+          return;
+      // 这里在判断相同类型的节点后可以做进一步优化
+      if (isSameVNode(oldVNode, newVNode)) {
+          let flag = oldVNode.flag = newVNode.flag;
+          if (flag === VNODE_TYPE.TEXT) {
+              patchText(oldVNode, newVNode);
+          }
+          else if (flag === VNODE_TYPE.ARRAYNODE) {
+              if (app === null || app === void 0 ? void 0 : app.options.arrayDiff) {
+                  patchArrayNodeT(oldVNode, newVNode, container);
+              }
+              else {
+                  patchArrayNode(oldVNode, newVNode, container);
+              }
+          }
+          else {
+              const nextSibling = (_a = oldVNode === null || oldVNode === void 0 ? void 0 : oldVNode.el) === null || _a === void 0 ? void 0 : _a.nextSibling;
+              unmount(oldVNode);
+              mount(newVNode, container, nextSibling);
+          }
+      }
+      else {
+          const nextSibling = (_b = oldVNode === null || oldVNode === void 0 ? void 0 : oldVNode.el) === null || _b === void 0 ? void 0 : _b.nextSibling;
+          unmount(oldVNode);
+          mount(newVNode, container, nextSibling);
+      }
+  }
+  function patchText(oldVNode, newVNode, container) {
+      oldVNode.el.nodeValue = newVNode.children;
+      newVNode.el = oldVNode.el;
+  }
+  function patchElementProp(oldValue, newValue, el, prop) {
+      setElementProp(el, prop, newValue);
+  }
+  function patchArrayNodeT(oldVNode, newVNode, container) {
+      const oldDepArray = oldVNode.depArray;
+      const newDepArray = newVNode.depArray;
+      const oldChildren = oldVNode.children;
+      const newChildren = newVNode.children;
+      let map = new Map();
+      oldDepArray.forEach((item, index) => map.set(item, { node: oldChildren[index], index }));
+      let maxIndexSoFar = { node: oldChildren[0], index: 0 };
+      newDepArray.forEach((item, newIndex) => {
+          if (map.has(item)) {
+              let old = map.get(item);
+              if (old.index < maxIndexSoFar.index) {
+                  let next = maxIndexSoFar.node.el.nextSibling;
+                  container.insertBefore(old.node.el, next);
+              }
+              maxIndexSoFar = old;
+              newChildren[newIndex] = old.node;
+              map.delete(item);
+          }
+          else {
+              let next = maxIndexSoFar.node.el.nextSibling;
+              let newNode = newChildren[newIndex];
+              mount(newChildren[newIndex], container, next);
+              maxIndexSoFar = { node: newNode, index: maxIndexSoFar.index + 1 };
+          }
+      });
+      map.forEach(value => unmount(value.node));
+  }
+  function patchArrayNode(oldVNode, newVNode, container) {
+      const nextSibling = oldVNode.el.nextSibling;
+      unmount(oldVNode);
+      mount(newVNode, container, nextSibling);
+  }
+
+  function mount(vnode, container, anchor, app) {
+      switch (vnode.flag) {
+          case VNODE_TYPE.ELEMENT:
+              mountElement(vnode, container, anchor, app);
+              break;
+          case VNODE_TYPE.TEXT:
+              mountText(vnode, container, anchor);
+              break;
+          case VNODE_TYPE.FRAGMENT:
+              mountFragment(vnode, container, anchor, app);
+              break;
+          case VNODE_TYPE.ARRAYNODE:
+              mountArrayNode(vnode, container, anchor, app);
+              break;
+          case VNODE_TYPE.COMPONENT:
+              mountComponent(vnode, container, anchor, app);
+              break;
+          case VNODE_TYPE.ALIVE:
+              mountAlive(vnode, container, anchor, app);
+              break;
+      }
+  }
+  function unmount(vnode, container) {
+      switch (vnode.flag) {
+          case VNODE_TYPE.ELEMENT:
+              unmountElement(vnode);
+              break;
+          case VNODE_TYPE.TEXT:
+              unmountText(vnode);
+              break;
+          case VNODE_TYPE.FRAGMENT:
+              unmountFragment(vnode);
+              break;
+          case VNODE_TYPE.ARRAYNODE:
+              unmountArrayNode(vnode);
+              break;
+          case VNODE_TYPE.COMPONENT:
+              unmountComponent(vnode);
+              break;
+      }
+  }
+  function mountChildren(children, container, anchor, app) {
+      children.forEach(child => mount(child, container, anchor, app));
+  }
+  // export function mountElement(vnode: VElement, container: HTMLElement, anchor?: HTMLElement) {
+  //   const el = document.createElement(vnode.type)
+  //   vnode.el = el
+  //   mountElementProps(vnode)
+  //   mountChildren(vnode.children, el)
+  //   container.insertBefore(el, anchor!)
+  // }
+  // export function unmountElement(vnode: VElement, container: HTMLElement) {
+  //   vnode.el.remove()
+  // }
+  function mountText(vnode, container, anchor) {
+      const el = document.createTextNode(vnode.children);
+      vnode.el = el;
+      container.insertBefore(el, anchor);
+  }
+  function unmountText(vnode, container) {
+      vnode.el.remove();
+  }
+  function mountFragment(vnode, container, anchor, app) {
+      const start = document.createTextNode('');
+      const end = document.createTextNode('');
+      vnode.anchor = start;
+      vnode.el = end;
+      container.insertBefore(start, anchor);
+      mountChildren(vnode.children, container, anchor, app);
+      container.insertBefore(end, anchor);
+  }
+  function unmountFragment(vnode, container) {
+      const start = vnode.anchor;
+      const end = vnode.el;
+      let cur = start;
+      while (cur && cur !== end) {
+          let next = cur.nextSibling;
+          cur.remove();
+          cur = next;
+      }
+      end.remove();
+  }
+  function mountArrayNode(vnode, container, anchor, app) {
+      const start = document.createTextNode('');
+      const end = document.createTextNode('');
+      vnode.anchor = start;
+      vnode.el = end;
+      container.insertBefore(start, anchor);
+      mountChildren(vnode.children, container, anchor, app);
+      container.insertBefore(end, anchor);
+  }
+  function unmountArrayNode(vnode, container, anchor) {
+      const start = vnode.anchor;
+      const end = vnode.el;
+      let cur = start;
+      while (cur && cur !== end) {
+          let next = cur.nextSibling;
+          cur.remove();
+          cur = next;
+      }
+      end.remove();
+  }
+  // export function mountElementProps(vnode: VElement) {
+  //   let el = vnode.el
+  //   let props = vnode.props
+  //   // 处理标签属性
+  //   for (let prop in props) {
+  //     let value = props[prop]
+  //     if (isActiver(value)) {
+  //       let firstValue = watchProp(value, (oldValue, newValue) => patchElementProp(oldValue, newValue, el, prop))
+  //       setElementProp(el, prop, firstValue)
+  //     } else {
+  //       setElementProp(el, prop, value)
+  //     }
+  //   }
+  // }
+  // /**
+  //  * 处理单个dom属性
+  // */
+  // export function setElementProp(el: HTMLElement, prop: string, value: any) {
+  //   if (isOnEvent(prop) && isFunction(value)) {
+  //     let pattern = /^on(.+)$/
+  //     let result = prop.match(pattern)
+  //     result && el.addEventListener(result[1].toLocaleLowerCase(), value.bind(el))
+  //     return
+  //   }
+  //   switch (prop) {
+  //     case 'className':
+  //       el.className = String(value)
+  //       break
+  //     case 'style':
+  //       if (isObject(value)) {
+  //         value = mergeStyle(value)
+  //       }
+  //     default:
+  //       el.setAttribute(prop, value)
+  //   }
+  // }
+  // /**
+  //  * 将对象形式的style转化为字符串
+  // */
+  // function mergeStyle(style: Record<any, any>): string {
+  //   let styleStringList = []
+  //   for (let cssAttr in style) {
+  //     styleStringList.push(`${cssAttr}:${style[cssAttr]};`)
+  //   }
+  //   return styleStringList.join('')
+  // }
+  function mountComponent(vnode, container, anchor, app) {
       const root = vnode.type.render(render);
       vnode.root = root;
-      mount(root, container, anchor);
+      mount(root, container, anchor, app);
       vnode.el = root.el;
   }
   function unmountComponent(vnode, container) {
       unmount(vnode.root);
   }
-  function mountAlive(vnode, container, anchor) {
-      let firstVNode = watchVNode(vnode.activer, (oldVNode, newVNode) => patch(oldVNode, newVNode, container));
+  function mountAlive(vnode, container, anchor, app) {
+      let firstVNode = watchVNode(vnode.activer, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app));
       vnode.vnode = firstVNode;
-      mount(firstVNode, container, anchor);
-  }
-
-  class RefImpl {
-      constructor(value) {
-          this._value = value;
-      }
-      get value() {
-          track(this, 'value');
-          return this._value;
-      }
-      set value(value) {
-          this._value = value;
-          trigger(this, 'value');
-      }
-  }
-  function ref(value) {
-      return new RefImpl(value);
-  }
-
-  function state(value) {
-      return ref(value);
-  }
-  function defineState(target) {
-      return reactive(target);
+      mount(firstVNode, container, anchor, app);
   }
 
   class Component {
@@ -628,11 +710,12 @@
   class Vact {
       constructor(vnode, options) {
           this.rootVNode = vnode;
+          this.options = options || {};
       }
       mount(selector) {
           const el = document.querySelector(selector);
           let container = document.createElement('div');
-          mount(this.rootVNode, container);
+          mount(this.rootVNode, container, undefined, this);
           el === null || el === void 0 ? void 0 : el.replaceWith(...container.childNodes);
       }
   }

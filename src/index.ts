@@ -1,4 +1,4 @@
-import { mount } from "./mount";
+import { mount } from "./mount/mount";
 import { render } from './render'
 import { TextSymbol } from './vnode/text'
 import { FragmentSymbol } from './vnode/fragment'

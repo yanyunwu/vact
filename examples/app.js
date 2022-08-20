@@ -1,7 +1,7 @@
 const { mount, render, defineState, Text, Fragment, Component, createVNode, createApp } = Vact
 
 
-const state = defineState({
+/* const state = defineState({
   show: true,
   show1: true,
   list: [1, 2, 3],
@@ -39,7 +39,7 @@ const app = render('div', { onClick: () => state.color = 'blue' }, [
 
 setInterval(() => {
   state.text++
-}, 1000)
+}, 1000) */
 
 /* const show = defineState({
   list: [{ num: 1, notShow: true }, { num: 2 }, { num: 3 }]
@@ -59,15 +59,16 @@ createApp(render(Fragment, null, [
 // import { createVNode } from "vactapp";
 // import { defineState, createApp } from 'vactapp';
 
-// const state = defineState({
-//   list: [1, 2, 3]
-// });
+const state = defineState({
+  list: [1, 2, 3]
+});
 
-// const app = render('div', null, [
-//   () => state.list.map(num => render('span', null, num)),
-//   render('button', { onClick: () => state.list.push(state.list.length + 1) }, '增加'),
-//   render('button', { onClick: () => state.list = [7, 8, 9] }, '增加')
-// ])
+const app = render('div', null, [
+  () => state.list.map(num => render('span', null, num)),
+  render('button', { onClick: () => state.list.push(state.list.length + 1) }, '增加'),
+  render('button', { onClick: () => state.list = [3, 2, 1] }, '增加'),
+  render('button', { onClick: () => state.list = [1, 2, 4, 3] }, '增加')
+])
 
 
-createApp(app).mount('#app');
+createApp(app, { arrayDiff: true }).mount('#app');

@@ -1,5 +1,6 @@
 import { isObjectExact, isVNode } from "../utils"
 import { Watcher } from "./watch"
+import { runUpdate } from './update'
 
 // 目标对象到映射对象
 const targetMap = new WeakMap()
@@ -79,7 +80,8 @@ export function trigger(target: Record<any, any>, prop: string | symbol, oldValu
   let mappingProp: Array<Watcher> = mapping[prop]
   if (!mappingProp) return
 
-  mappingProp.forEach(watcher => watcher.update(oldValue, newValue))
+  // mappingProp.forEach(watcher => watcher.update(oldValue, newValue))
+  mappingProp.forEach(watcher => runUpdate(watcher, oldValue, newValue))
 }
 
 /**

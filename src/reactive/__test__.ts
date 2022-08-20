@@ -4,9 +4,9 @@ import { active } from "./active";
 
 
 let obj = reactive({ name: 'asdas' })
-watch(active(() => obj.name), () => {
+watch(active(() => obj.name), (o, n) => {
   console.log('改变了');
+  console.log(o, n);
+
 
 })
-
-obj.name = 'dasdasd'
