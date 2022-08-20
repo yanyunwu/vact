@@ -11,7 +11,8 @@ export enum VNODE_TYPE {
   TEXT,
   FRAGMENT,
   COMPONENT,
-  ARRAYNODE
+  ARRAYNODE,
+  ALIVE
 }
 
 /**
@@ -22,17 +23,21 @@ export interface VNode {
   // 虚拟节点类型
   type: string | symbol | Component,
 
-  // 虚拟节点属性
-  props?: Record<string, any> | null,
-
-  // 虚拟节点子节点
-  children?: Array<Activer | VNode | string> | string,
-
   // 虚拟节点表标识
   flag: VNODE_TYPE
 
+  // 虚拟节点属性
+  props?: Record<string, any>,
+
+  // 虚拟节点子节点
+  children?: Array<VNode> | string,
+
   // 真实节点
   el?: HTMLElement | Text
+
+  activer?: Activer
+  // 目前存在的节点
+  vnode?: VNode
 
 }
 

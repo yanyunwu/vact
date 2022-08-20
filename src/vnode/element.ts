@@ -11,11 +11,11 @@ export interface VElement extends VNode {
   props: Record<string, any>,
 
   // 虚拟节点子节点
-  children: Array<Activer | VNode | string>,
+  children: Array<VNode>,
 
   // 虚拟节点表标识
   flag: VNODE_TYPE.ELEMENT
 
-  el?: HTMLElement
+  el: HTMLElement
 
 }

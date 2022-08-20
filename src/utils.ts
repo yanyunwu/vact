@@ -1,8 +1,8 @@
 import { VNode, VNODE_TYPE } from './vnode/vnode'
 import { Activer } from './reactive/active'
-import { Fragment } from './vnode/fragment'
-import { Text } from './vnode/text'
-import { ArrayNode } from './vnode/array'
+import { FragmentSymbol } from './vnode/fragment'
+import { TextSymbol } from './vnode/text'
+import { ArraySymbol } from './vnode/array'
 
 export function isString(content: unknown): content is string {
   return typeof content === 'string'
@@ -13,15 +13,15 @@ export function isFunction(content: unknown): content is Function {
 }
 
 export function isFragment(content: unknown): boolean {
-  return content === Fragment
+  return content === FragmentSymbol
 }
 
 export function isArrayNode(content: unknown): boolean {
-  return content === ArrayNode
+  return content === ArraySymbol
 }
 
 export function isText(content: unknown): boolean {
-  return content === Text
+  return content === TextSymbol
 }
 
 export function isActiver(content: unknown): content is Activer {

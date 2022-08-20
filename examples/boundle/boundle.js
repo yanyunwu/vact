@@ -18,6 +18,7 @@
       VNODE_TYPE[VNODE_TYPE["FRAGMENT"] = 2] = "FRAGMENT";
       VNODE_TYPE[VNODE_TYPE["COMPONENT"] = 3] = "COMPONENT";
       VNODE_TYPE[VNODE_TYPE["ARRAYNODE"] = 4] = "ARRAYNODE";
+      VNODE_TYPE[VNODE_TYPE["ALIVE"] = 5] = "ALIVE";
   })(VNODE_TYPE || (VNODE_TYPE = {}));
 
   function isSameVNode(oldVNode, newVNode) {
@@ -30,8 +31,12 @@
           return;
       // 这里在判断相同类型的节点后可以做进一步优化
       if (isSameVNode(oldVNode, newVNode)) {
-          if (oldVNode.flag === VNODE_TYPE.TEXT) {
+          let flag = oldVNode.flag = newVNode.flag;
+          if (flag === VNODE_TYPE.TEXT) {
               patchText(oldVNode, newVNode);
+          }
+          else if (flag === VNODE_TYPE.ARRAYNODE) {
+              patchArrayNode(oldVNode, newVNode, container);
           }
           else {
               const nextSibling = (_a = oldVNode === null || oldVNode === void 0 ? void 0 : oldVNode.el) === null || _a === void 0 ? void 0 : _a.nextSibling;
@@ -52,12 +57,30 @@
   function patchElementProp(oldValue, newValue, el, prop) {
       setElementProp(el, prop, newValue);
   }
+  function patchArrayNode(oldVNode, newVNode, container) {
+      const oldDepArray = oldVNode.depArray;
+      newVNode.depArray;
+      const oldChildren = oldVNode.children;
+      newVNode.children;
+      // console.log(oldVNode.children);
+      let map = new Map();
+      oldDepArray.forEach((item, index) => map.set(item, oldChildren[index]));
+      // let anchor = oldChildren[0].
+      // newChildren.forEach(item => {
+      //   if(map.has(item)){
+      //     let 
+      //   }
+      // })
+      const nextSibling = oldVNode.el.nextSibling;
+      unmount(oldVNode);
+      mount(newVNode, container, nextSibling);
+  }
 
-  const Fragment = Symbol('Fragment');
+  const FragmentSymbol = Symbol('Fragment');
 
-  const Text = Symbol('Text');
+  const TextSymbol = Symbol('Text');
 
-  const ArrayNode = Symbol('ArrayNode');
+  const ArraySymbol = Symbol('ArrayNode');
 
   function isString(content) {
       return typeof content === 'string';
@@ -66,13 +89,13 @@
       return typeof content === 'function';
   }
   function isFragment(content) {
-      return content === Fragment;
+      return content === FragmentSymbol;
   }
   function isArrayNode(content) {
-      return content === ArrayNode;
+      return content === ArraySymbol;
   }
   function isText(content) {
-      return content === Text;
+      return content === TextSymbol;
   }
   function isActiver(content) {
       return isObject(content) && content.flag === 'activer';
@@ -142,8 +165,10 @@
               return res;
           },
           set(target, prop, value, receiver) {
+              const oldValue = target.slice();
               const res = Reflect.set(target, prop, value, receiver);
-              trigger(targetObj, Arrprop);
+              const newValue = target;
+              trigger(targetObj, Arrprop, oldValue, newValue);
               return res;
           }
       };
@@ -199,15 +224,52 @@
       return new Activer(fn);
   }
 
-  function render(type, props, children) {
+  const AliveSymbol = Symbol('Alive');
+
+  /**
+   * 函数转化为activer转化为VAlive
+   * activer转化为VAlive
+   * string转化为VText
+   * 数组转化为VArray
+   * 其他转化为VText
+  */
+  function standarVNode(node) {
+      if (isVNode(node))
+          return node;
+      if (isFunction(node))
+          return renderAlive(active(node));
+      else if (isActiver(node))
+          return renderAlive(node);
+      else if (isString(node))
+          return renderText(node);
+      else if (isArray(node))
+          return renderArrayNode(node.map(item => standarVNode(item)));
+      else {
+          let value = node;
+          let retText;
+          if (!value && typeof value !== 'number')
+              retText = renderText('');
+          else
+              retText = renderText(String(value));
+          return retText;
+      }
+  }
+  /**
+   * text(不需要props)、fragment(不需要props)、element、component为显性创建
+   * array(不需要props)、alive(不需要props)为隐形创建
+  */
+  function render(type, props, mayChildren) {
+      // text的children比较特殊先处理
+      if (isText(type)) {
+          return renderText(String(mayChildren));
+      }
+      let children;
       // 预处理 处理为单个的children
-      if (!isText(type) && !Array.isArray(children)) {
-          children = [children];
-      }
-      // 子元素预处理 
-      if (children && Array.isArray(children)) {
-          children = children.map(child => isFunction(child) ? active(child) : child);
-      }
+      if (isArray(mayChildren))
+          children = mayChildren;
+      else
+          children = [mayChildren];
+      let standardChildren = children.map(child => standarVNode(child));
       // 属性预处理
       if (props) {
           for (const prop in props) {
@@ -217,30 +279,43 @@
               }
           }
       }
-      let flag;
-      if (isString(type)) {
-          flag = VNODE_TYPE.ELEMENT;
-      }
-      else if (isFragment(type)) {
-          flag = VNODE_TYPE.FRAGMENT;
-      }
-      else if (isText(type)) {
-          flag = VNODE_TYPE.TEXT;
-      }
-      else if (isArrayNode(type)) {
-          flag = VNODE_TYPE.ARRAYNODE;
-      }
-      else if (isFunction(type)) {
-          return renderComponent(type, props || {}, children || []);
-      }
-      else {
-          throw '传入参数不合法';
-      }
+      if (isString(type))
+          return renderElement(type, props || {}, standardChildren);
+      if (isFragment(type))
+          return renderFragment(standardChildren);
+      if (isArrayNode(type))
+          return renderArrayNode(standardChildren);
+      if (isFunction(type))
+          return renderComponent(type, props || {}, standardChildren);
+      throw '传入参数不合法';
+  }
+  function renderText(text) {
       return {
-          type: type,
+          type: TextSymbol,
+          flag: VNODE_TYPE.TEXT,
+          children: text
+      };
+  }
+  function renderElement(tag, props, children) {
+      return {
+          type: tag,
+          flag: VNODE_TYPE.ELEMENT,
           props,
-          children,
-          flag
+          children
+      };
+  }
+  function renderFragment(children) {
+      return {
+          type: FragmentSymbol,
+          flag: VNODE_TYPE.FRAGMENT,
+          children
+      };
+  }
+  function renderArrayNode(children) {
+      return {
+          type: ArraySymbol,
+          flag: VNODE_TYPE.ARRAYNODE,
+          children
       };
   }
   // 判断是普通函数还是构造函数
@@ -274,6 +349,13 @@
           };
       }
   }
+  function renderAlive(activer) {
+      return {
+          type: AliveSymbol,
+          flag: VNODE_TYPE.ALIVE,
+          activer
+      };
+  }
 
   /**
    * 观察者
@@ -291,7 +373,8 @@
           let newValue = this.activeProps.value;
           let oldValue = this.value;
           this.value = newValue;
-          this.callback(oldValue, newValue);
+          let meta = { targetPropOldValue, targetPropnewValue };
+          this.callback(oldValue, newValue, meta);
       }
   }
   /**
@@ -304,32 +387,25 @@
           callback(oldValue, newValue);
       });
   }
+  /**
+   * 监控可变状态dom
+  */
   function watchVNode(activeVNode, callback) {
-      let watcher = new Watcher(activeVNode, function (oldVNode, newVNode) {
-          if (!isVNode(newVNode)) {
-              if (!newVNode && typeof newVNode !== 'number')
-                  newVNode = render(Text, null, '');
-              else if (Array.isArray(newVNode)) {
-                  newVNode = render(ArrayNode, null, newVNode);
-              }
-              else {
-                  newVNode = render(Text, null, String(newVNode));
-              }
+      let watcher = new Watcher(activeVNode, function (oldValue, newValue, meta) {
+          const oldVNode = oldValue;
+          const newVNode = standarVNode(newValue);
+          // 对于数组节点后期需要记录它的响应式数组用于节点更新
+          if (oldVNode.flag === VNODE_TYPE.ARRAYNODE) {
+              oldVNode.depArray = meta === null || meta === void 0 ? void 0 : meta.targetPropOldValue;
+          }
+          // 对于数组节点后期需要记录它的响应式数组用于节点更新
+          if (newVNode.flag === VNODE_TYPE.ARRAYNODE) {
+              newVNode.depArray = meta === null || meta === void 0 ? void 0 : meta.targetPropnewValue;
           }
           callback(oldVNode, newVNode);
           watcher.value = newVNode;
       });
-      if (isVNode(watcher.value))
-          return watcher.value;
-      if (!watcher.value && typeof watcher.value !== 'number')
-          watcher.value = render(Text, null, '');
-      else if (Array.isArray(watcher.value)) {
-          watcher.value = render(ArrayNode, null, watcher.value);
-      }
-      else {
-          watcher.value = render(Text, null, String(watcher.value));
-      }
-      return watcher.value;
+      return watcher.value = standarVNode(watcher.value);
   }
   /**
    * 监控可变dom的prop
@@ -355,6 +431,9 @@
           case VNODE_TYPE.COMPONENT:
               mountComponent(vnode, container, anchor);
               break;
+          case VNODE_TYPE.ALIVE:
+              mountAlive(vnode, container, anchor);
+              break;
       }
   }
   function unmount(vnode, container) {
@@ -377,21 +456,21 @@
       }
   }
   function mountChildren(children, container, anchor) {
-      children.forEach(child => {
-          if (isActiver(child)) {
-              let firstVNode = watchVNode(child, (oldVNode, newVNode) => patch(oldVNode, newVNode, container));
-              mount(firstVNode, container, anchor);
-          }
-          else if (isVNode(child)) {
-              mount(child, container, anchor);
-          }
-          else if (isArray(child)) {
-              mountChildren(child, container, anchor);
-          }
-          else {
-              mount(render(Text, null, child || typeof child === 'number' ? String(child) : ''), container, anchor);
-          }
-      });
+      children.forEach(child => mount(child, container, anchor));
+      // children.forEach((child, index) => {
+      //   if (isActiver(child)) {
+      //     let firstVNode = watchVNode(child, (oldVNode, newVNode) => patch(oldVNode, newVNode, container))
+      //     mount(firstVNode, container, anchor)
+      //   } else if (isVNode(child)) {
+      //     mount(child, container, anchor)
+      //   } else if (isArray(child)) {
+      //     mountChildren(child, container, anchor)
+      //   } else {
+      //     let node = render(Text, null, child || typeof child === 'number' ? String(child) : '')
+      //     children[index] = node
+      //     mount(node, container, anchor)
+      //   }
+      // })
   }
   function mountElement(vnode, container, anchor) {
       const el = document.createElement(vnode.type);
@@ -509,6 +588,11 @@
   function unmountComponent(vnode, container) {
       unmount(vnode.root);
   }
+  function mountAlive(vnode, container, anchor) {
+      let firstVNode = watchVNode(vnode.activer, (oldVNode, newVNode) => patch(oldVNode, newVNode, container));
+      vnode.vnode = firstVNode;
+      mount(firstVNode, container, anchor);
+  }
 
   class RefImpl {
       constructor(value) {
@@ -558,8 +642,8 @@
 
   exports.Activer = Activer;
   exports.Component = Component;
-  exports.Fragment = Fragment;
-  exports.Text = Text;
+  exports.Fragment = FragmentSymbol;
+  exports.Text = TextSymbol;
   exports.createApp = createApp;
   exports.createVNode = render;
   exports["default"] = Vact;

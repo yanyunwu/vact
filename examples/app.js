@@ -1,7 +1,7 @@
 const { mount, render, defineState, Text, Fragment, Component, createVNode, createApp } = Vact
 
 
-/* const state = defineState({
+const state = defineState({
   show: true,
   show1: true,
   list: [1, 2, 3],
@@ -39,7 +39,7 @@ const app = render('div', { onClick: () => state.color = 'blue' }, [
 
 setInterval(() => {
   state.text++
-}, 1000) */
+}, 1000)
 
 /* const show = defineState({
   list: [{ num: 1, notShow: true }, { num: 2 }, { num: 3 }]
@@ -58,27 +58,16 @@ createApp(render(Fragment, null, [
 // import { Fragment } from "vactapp";
 // import { createVNode } from "vactapp";
 // import { defineState, createApp } from 'vactapp';
-const state = defineState({
-  count: 0,
-  color: 'red'
-});
-console.log(state);
 
-class App {
-  render() {
-    return createVNode("div", {}, ["\n      ", createVNode("h1", {
-      style: () => ({
-        color: state.data.color
-      })
-    }, ["hello world!"]), "\n      ", createVNode("div", {
-      onClick: () => state.data.color = 'blue'
-    }, [createVNode("button", {}, ["\u6539\u53D8\u989C\u8272"])]), "\n      ", createVNode("div", {}, ["\n        ", createVNode("span", {}, ["\u8BA1\u6570\u5668"]), "\n        ", createVNode("button", {
-      onClick: () => state.data.count++
-    }, ["\u589E\u52A0"]), "\n        ", () => state.data.count, "\n        ", createVNode("button", {
-      onClick: () => state.data.count--
-    }, ["\u51CF\u5C11"]), "\n      "]), "\n    "]);
-  }
+// const state = defineState({
+//   list: [1, 2, 3]
+// });
 
-}
+// const app = render('div', null, [
+//   () => state.list.map(num => render('span', null, num)),
+//   render('button', { onClick: () => state.list.push(state.list.length + 1) }, '增加'),
+//   render('button', { onClick: () => state.list = [7, 8, 9] }, '增加')
+// ])
 
-createApp(createVNode(Fragment, null, [createVNode(App, {}, [])])).mount('#app');
+
+createApp(app).mount('#app');

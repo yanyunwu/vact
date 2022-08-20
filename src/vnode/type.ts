@@ -1,4 +1,3 @@
-import { VElement } from "./element";
-import { VText } from "./text";
-
-export type VNodeType = VElement | VText
+import { FragmentSymbol } from './fragment'
+import { TextSymbol } from './text'
+import { ArraySymbol } from './array'

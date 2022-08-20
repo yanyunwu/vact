@@ -1,17 +1,17 @@
 import { patch, patchElementProp } from "./patch";
-import { Activer } from "./reactive/active";
 import { watchProp, watchVNode } from "./reactive/watch";
 import { render } from "./render";
-import { isActiver, isArray, isFunction, isObject, isOnEvent, isVNode } from "./utils";
+import { isActiver, isFunction, isObject, isOnEvent } from "./utils";
+import { VAlive } from "./vnode/alive";
 import { VArrayNode } from "./vnode/array";
 import { VComponent } from "./vnode/component";
 import { VElement } from "./vnode/element";
 import { VFragment } from "./vnode/fragment";
-import { Text, VText } from './vnode/text'
+import { VText } from './vnode/text'
 import { VNode, VNODE_TYPE } from "./vnode/vnode";
 
-
 export function mount(vnode: VNode, container: HTMLElement, anchor?: HTMLElement) {
+
   switch (vnode.flag) {
     case VNODE_TYPE.ELEMENT:
       mountElement(vnode as VElement, container, anchor)
@@ -27,6 +27,9 @@ export function mount(vnode: VNode, container: HTMLElement, anchor?: HTMLElement
       break
     case VNODE_TYPE.COMPONENT:
       mountComponent(vnode as VComponent, container, anchor)
+      break
+    case VNODE_TYPE.ALIVE:
+      mountAlive(vnode as VAlive, container, anchor)
       break
   }
 }
@@ -51,19 +54,22 @@ export function unmount(vnode: VNode, container: HTMLElement) {
   }
 }
 
-export function mountChildren(children: Array<Activer | VNode | string>, container: HTMLElement, anchor?: HTMLElement) {
-  children.forEach(child => {
-    if (isActiver(child)) {
-      let firstVNode = watchVNode(child, (oldVNode, newVNode) => patch(oldVNode, newVNode, container))
-      mount(firstVNode, container, anchor)
-    } else if (isVNode(child)) {
-      mount(child, container, anchor)
-    } else if (isArray(child)) {
-      mountChildren(child, container, anchor)
-    } else {
-      mount(render(Text, null, child || typeof child === 'number' ? String(child) : ''), container, anchor)
-    }
-  })
+export function mountChildren(children: Array<VNode>, container: HTMLElement, anchor?: HTMLElement) {
+  children.forEach(child => mount(child, container, anchor))
+  // children.forEach((child, index) => {
+  //   if (isActiver(child)) {
+  //     let firstVNode = watchVNode(child, (oldVNode, newVNode) => patch(oldVNode, newVNode, container))
+  //     mount(firstVNode, container, anchor)
+  //   } else if (isVNode(child)) {
+  //     mount(child, container, anchor)
+  //   } else if (isArray(child)) {
+  //     mountChildren(child, container, anchor)
+  //   } else {
+  //     let node = render(Text, null, child || typeof child === 'number' ? String(child) : '')
+  //     children[index] = node
+  //     mount(node, container, anchor)
+  //   }
+  // })
 }
 
 export function mountElement(vnode: VElement, container: HTMLElement, anchor?: HTMLElement) {
@@ -193,4 +199,10 @@ export function mountComponent(vnode: VComponent, container: HTMLElement, anchor
 
 export function unmountComponent(vnode: VComponent, container: HTMLElement) {
   unmount(vnode.root, container)
+}
+
+export function mountAlive(vnode: VAlive, container: HTMLElement, anchor?: HTMLElement) {
+  let firstVNode = watchVNode(vnode.activer, (oldVNode, newVNode) => patch(oldVNode, newVNode, container))
+  vnode.vnode = firstVNode
+  mount(firstVNode, container, anchor)
 }

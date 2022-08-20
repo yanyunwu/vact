@@ -58,8 +58,10 @@ function reactiveArray(targetArr: Array<any>, targetObj: Record<any, any>, Arrpr
       return res
     },
     set(target, prop, value, receiver) {
+      const oldValue = target.slice()
       const res = Reflect.set(target, prop, value, receiver)
-      trigger(targetObj, Arrprop)
+      const newValue = target
+      trigger(targetObj, Arrprop, oldValue, newValue)
       return res
     }
   }

@@ -23,17 +23,17 @@ const config = {
       format: 'umd',
       name: 'Vact'
     },
-    {
-      file: "lib/boundle.umd.js",    // 必须
-      format: 'umd',
-      name: 'Vact',
-      sourcemap: true
-    },
-    {
-      file: "lib/bundle.esm.js",
-      format: "es",
-      sourcemap: true
-    }
+    // {
+    //   file: "lib/boundle.umd.js",    // 必须
+    //   format: 'umd',
+    //   name: 'Vact',
+    //   sourcemap: true
+    // },
+    // {
+    //   file: "lib/bundle.esm.js",
+    //   format: "es",
+    //   sourcemap: true
+    // }
   ],
 
   plugins: [

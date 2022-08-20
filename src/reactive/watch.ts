@@ -1,10 +1,14 @@
 import { setActiver } from "./reactive"
 import { active, Activer } from './active'
-import { VNode } from "../vnode/vnode"
-import { isActiver, isVNode } from "../utils"
-import { render } from "../render"
-import { Text } from '../vnode/text'
-import { ArrayNode } from "../vnode/array"
+import { VNode, VNODE_TYPE } from "../vnode/vnode"
+import { isActiver } from "../utils"
+import { Child, standarVNode } from "../render"
+import { VArrayNode } from "../vnode/array"
+
+type Meta = {
+  targetPropOldValue: any,
+  targetPropnewValue: any
+}
 
 /**
  * 观察者
@@ -12,10 +16,10 @@ import { ArrayNode } from "../vnode/array"
 */
 export class Watcher<T = any> {
   value: T
-  callback: (oldValue: T, newValue: T) => void
+  callback: (oldValue: T, newValue: T, meta?: Meta) => void
   activeProps: Activer<T>
 
-  constructor(activeProps: Activer<T>, callback: (oldValue: T, newValue: T) => void) {
+  constructor(activeProps: Activer<T>, callback: (oldValue: T, newValue: T, meta?: Meta) => void) {
     setActiver(this)
     this.value = activeProps.value
     this.callback = callback
@@ -27,7 +31,8 @@ export class Watcher<T = any> {
     let newValue = this.activeProps.value
     let oldValue = this.value
     this.value = newValue
-    this.callback(oldValue, newValue)
+    let meta = { targetPropOldValue, targetPropnewValue }
+    this.callback(oldValue, newValue, meta)
   }
 }
 
@@ -45,30 +50,25 @@ export function watch<T = any>(activeProps: (() => T) | Activer<T>, callback: (o
 /**
  * 监控可变状态dom
 */
-export type RowChildType = VNode | null | Array<VNode>
-export function watchVNode(activeVNode: Activer<RowChildType>, callback: (oldVNode: VNode, newVNode: VNode) => void): VNode {
-  let watcher = new Watcher<RowChildType>(activeVNode, function (oldVNode: RowChildType, newVNode: RowChildType) {
-    if (!isVNode(newVNode)) {
-      if (!newVNode && typeof newVNode !== 'number') newVNode = render(Text, null, '')
-      else if (Array.isArray(newVNode)) {
-        newVNode = render(ArrayNode, null, newVNode)
-      } else {
-        newVNode = render(Text, null, String(newVNode))
-      }
+export function watchVNode(activeVNode: Activer<Child>, callback: (oldVNode: VNode, newVNode: VNode) => void): VNode {
+  let watcher = new Watcher<Child>(activeVNode, function (oldValue: Child, newValue: Child, meta) {
+    const oldVNode = oldValue as VNode
+    const newVNode = standarVNode(newValue)
+
+    // 对于数组节点后期需要记录它的响应式数组用于节点更新
+    if (oldVNode.flag === VNODE_TYPE.ARRAYNODE) {
+      (<VArrayNode>oldVNode).depArray = meta?.targetPropOldValue
     }
-    callback(oldVNode as VNode, newVNode)
+    // 对于数组节点后期需要记录它的响应式数组用于节点更新
+    if (newVNode.flag === VNODE_TYPE.ARRAYNODE) {
+      (<VArrayNode>newVNode).depArray = meta?.targetPropnewValue
+    }
+
+    callback(oldVNode, newVNode)
     watcher.value = newVNode
   })
 
-  if (isVNode(watcher.value)) return watcher.value
-
-  if (!watcher.value && typeof watcher.value !== 'number') watcher.value = render(Text, null, '')
-  else if (Array.isArray(watcher.value)) {
-    watcher.value = render(ArrayNode, null, watcher.value)
-  } else {
-    watcher.value = render(Text, null, String(watcher.value))
-  }
-  return watcher.value
+  return watcher.value = standarVNode(watcher.value)
 }
 
 

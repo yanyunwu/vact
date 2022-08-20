@@ -12,7 +12,7 @@ export interface VComponent extends VNode {
   props: Record<string, any>,
 
   // 虚拟节点子节点
-  children: Array<Activer | VNode | string>,
+  children: Array<VNode>,
 
   // 虚拟节点表标识
   flag: VNODE_TYPE.COMPONENT
@@ -26,6 +26,5 @@ export interface VComponent extends VNode {
 export interface Component {
   props: Record<string, any>
   children: Array<Activer | VNode | string>
-
   render(h?: H): VNode
 }
