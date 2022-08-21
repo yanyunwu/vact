@@ -10,7 +10,7 @@ export enum VNODE_TYPE {
   // 文本节点类型
   TEXT,
   FRAGMENT,
-  COMPONENT,
+  // COMPONENT,
   ARRAYNODE,
   ALIVE
 }
@@ -34,6 +34,7 @@ export interface VNode {
 
   // 真实节点
   el?: HTMLElement | Text
+  anchor?: Text
 
   activer?: Activer
   // 目前存在的节点

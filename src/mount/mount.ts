@@ -25,9 +25,9 @@ export function mount(vnode: VNode, container: HTMLElement, anchor?: HTMLElement
     case VNODE_TYPE.ARRAYNODE:
       mountArrayNode(vnode as VArrayNode, container, anchor, app)
       break
-    case VNODE_TYPE.COMPONENT:
-      mountComponent(vnode as VComponent, container, anchor, app)
-      break
+    // case VNODE_TYPE.COMPONENT:
+    //   mountComponent(vnode as VComponent, container, anchor, app)
+    //   break
     case VNODE_TYPE.ALIVE:
       mountAlive(vnode as VAlive, container, anchor, app)
       break
@@ -48,9 +48,9 @@ export function unmount(vnode: VNode, container: HTMLElement) {
     case VNODE_TYPE.ARRAYNODE:
       unmountArrayNode(vnode as VArrayNode, container)
       break
-    case VNODE_TYPE.COMPONENT:
-      unmountComponent(vnode as VComponent, container)
-      break
+    // case VNODE_TYPE.COMPONENT:
+    //   unmountComponent(vnode as VComponent, container)
+    //   break
   }
 }
 
@@ -112,18 +112,18 @@ export function unmountArrayNode(vnode: VArrayNode, container: HTMLElement, anch
   end.remove()
 }
 
-export function mountComponent(vnode: VComponent, container: HTMLElement, anchor?: HTMLElement, app?: Vact) {
-  console.log(1111);
+// export function mountComponent(vnode: VComponent, container: HTMLElement, anchor?: HTMLElement, app?: Vact) {
+//   console.log(1111);
 
-  const root = vnode.type.render(render)
-  vnode.root = root
-  mount(root, container, anchor, app)
-  vnode.el = root.el!
-}
+//   const root = vnode.type.render(render)
+//   vnode.root = root
+//   mount(root, container, anchor, app)
+//   vnode.el = root.el!
+// }
 
-export function unmountComponent(vnode: VComponent, container: HTMLElement) {
-  unmount(vnode.root, container)
-}
+// export function unmountComponent(vnode: VComponent, container: HTMLElement) {
+//   unmount(vnode.root, container)
+// }
 
 export function mountAlive(vnode: VAlive, container: HTMLElement, anchor?: HTMLElement, app?: Vact) {
   let firstVNode = watchVNode(vnode.activer, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app))

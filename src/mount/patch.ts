@@ -94,7 +94,8 @@ export function patchArrayNodeT(oldVNode: VArrayNode, newVNode: VArrayNode, cont
     if (old) {
       if (old.index < maxIndexSoFar.index) {
         let next = maxIndexSoFar.node.el!.nextSibling
-        container.insertBefore(old.node.el!, next)
+        VNodeInsertBefore(container, old.node, next)
+        // container.insertBefore(old.node.el!, next)
       }
       maxIndexSoFar = old
       newChildren[newIndex] = old.node
@@ -102,7 +103,7 @@ export function patchArrayNodeT(oldVNode: VArrayNode, newVNode: VArrayNode, cont
     } else {
       let next = maxIndexSoFar.node.el!.nextSibling
       let newNode = newChildren[newIndex]
-      mount(newChildren[newIndex], container, next as HTMLElement | undefined)
+      mount(newNode, container, next as HTMLElement | undefined)
       maxIndexSoFar = { node: newNode, index: maxIndexSoFar.index + 1 }
     }
   })
@@ -121,4 +122,20 @@ function patchArrayNode(oldVNode: VArrayNode, newVNode: VArrayNode, container: H
   const nextSibling = oldVNode.el.nextSibling
   unmount(oldVNode, container)
   mount(newVNode, container, nextSibling as HTMLElement | undefined)
+}
+
+function VNodeInsertBefore(container: HTMLElement, node: VNode, next: HTMLElement | undefined | Text | ChildNode | null) {
+  if (node.flag === VNODE_TYPE.ELEMENT || node.flag === VNODE_TYPE.TEXT) {
+    container.insertBefore(node.el!, next!)
+  } else if (node.flag === VNODE_TYPE.ARRAYNODE || node.flag === VNODE_TYPE.FRAGMENT) {
+    let start: ChildNode | null | undefined = node.anchor
+    let nextToMove = start?.nextSibling
+    let end: ChildNode | null | undefined = node.el
+    while (start !== end) {
+      container.insertBefore(start!, next!)
+      start = nextToMove
+      nextToMove = start?.nextSibling
+    }
+    container.insertBefore(end!, next!)
+  }
 }

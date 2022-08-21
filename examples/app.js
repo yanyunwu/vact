@@ -68,7 +68,7 @@ const app = render('div', null, [
   () => state.list.map(num => render('span', null, num)),
   render('button', { onClick: () => state.list.push(state.list.length + 1) }, '增加'),
   render('button', { onClick: () => state.list.splice(1, 1) }, '增加'),
-  render('button', { onClick: () => state.list = [1, 2, 3, 4] }, '增加')
+  render('button', { onClick: () => state.list = [1, 2, 3, 4, 2] }, '增加')
 ])
 
 
