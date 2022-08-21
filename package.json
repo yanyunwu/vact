@@ -31,5 +31,15 @@
     "前端框架",
     "响应式",
     "响应式前端框架"
+  ],
+  "files": [
+    "lib",
+    "src",
+    "index.d.ts",
+    "index.ts",
+    "LICENSE",
+    "package.json",
+    "README.md",
+    "tsconfig.json"
   ]
 }
