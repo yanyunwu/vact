@@ -11,7 +11,7 @@ import { FragmentSymbol } from "./vnode/fragment";
 /**
  * 传说中的render函数
 */
-export type ComponentConstructor = new (props: Record<string, any>, children: Array<VNode>) => Component | VNode
+export type ComponentConstructor = (new () => Component) | ((props: Record<string, any>, children: Array<VNode>) => Child)
 export type H = (type: string | symbol | ComponentConstructor, props?: Record<string, any> | null, mayChildren?: Child | Array<Child>) => VNode
 // 未经过标准化的children类型
 export type Child = (() => Child) | string | VNode | Array<Child> | Activer | Exclude<(() => Child) | string | VNode | Array<Child> | Activer, any>
@@ -123,13 +123,16 @@ function renderComponent(component: ComponentConstructor, props: Record<string, 
       cprops[prop] = cur
     }
   }
-  let result = new component(cprops, children)
-  if (isVNode(result)) {
-    return standarVNode(result)
-  } else {
+
+  if (component.prototype.render && isFunction(component.prototype.render)) {
+    let Constructor = component as new () => Component
+    let result = new Constructor()
     result.props = cprops
     result.children = children
     return standarVNode(result.render(render))
+  } else {
+    let Fun = component as (props: Record<string, any>, children: Array<VNode>) => Child
+    return standarVNode(Fun(cprops, children))
   }
 }
 

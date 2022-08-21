@@ -1,6 +1,6 @@
 import { Activer } from "../reactive";
 import { VNode, VNODE_TYPE } from "./vnode";
-import { H } from '../render'
+import { Child, H } from '../render'
 
 
 export interface VComponent extends VNode {
@@ -15,7 +15,7 @@ export interface VComponent extends VNode {
   children: Array<VNode>,
 
   // 虚拟节点表标识
-  flag: VNODE_TYPE.COMPONENT
+  // flag: VNODE_TYPE.COMPONENT
 
   root: VNode,
   // root的el
@@ -26,5 +26,5 @@ export interface VComponent extends VNode {
 export interface Component {
   props: Record<string, any>
   children: Array<Activer | VNode | string>
-  render(h?: H): VNode
+  render(h?: H): Child
 }

@@ -1,3 +1,5 @@
+
+(function(l, r) { if (!l || l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (self.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(self.document);
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
   typeof define === 'function' && define.amd ? define(['exports'], factory) :
@@ -337,14 +339,16 @@
               cprops[prop] = cur;
           }
       }
-      let result = new component(cprops, children);
-      if (isVNode(result)) {
-          return standarVNode(result);
-      }
-      else {
+      if (component.prototype.render && isFunction(component.prototype.render)) {
+          let Constructor = component;
+          let result = new Constructor();
           result.props = cprops;
           result.children = children;
           return standarVNode(result.render(render));
+      }
+      else {
+          let Fun = component;
+          return standarVNode(Fun(cprops, children));
       }
   }
   function renderAlive(activer) {

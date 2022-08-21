@@ -10,7 +10,10 @@ import dts from "rollup-plugin-dts";
 import sourceMaps from "rollup-plugin-sourcemaps";
 /** 压缩打包 */
 import { terser } from 'rollup-plugin-terser';
-const config = {
+
+const isDev = process.env.NODE_ENV !== 'production';
+
+const devConfig = {
   input: "index.ts", // 入口文件
   output: [
     {
@@ -22,6 +25,33 @@ const config = {
       file: "examples/boundle/boundle.js",    // 必须
       format: 'umd',
       name: 'Vact'
+    }
+  ],
+
+  plugins: [
+    nodePolyfills(),
+    livereload(),
+    serve({
+      // open: true,
+      port: 3000,
+      contentBase: './examples'
+    }),
+    typescript({
+      exclude: "node_modules/**",
+      typescript: require("typescript")
+    }),
+    sourceMaps(),
+  ]
+
+};
+
+const proConfig = {
+  input: "index.ts", // 入口文件
+  output: [
+    {
+      file: "lib/boundle.js",    // 必须
+      format: "cjs",  // 必须
+      sourcemap: true
     },
     {
       file: "lib/boundle.umd.js",    // 必须
@@ -38,25 +68,18 @@ const config = {
 
   plugins: [
     nodePolyfills(),
-    // livereload(),
-    // serve({
-    //   // open: true,
-    //   port: 3000,
-    //   contentBase: './examples'
-    // }),
     typescript({
       exclude: "node_modules/**",
       typescript: require("typescript")
     }),
     sourceMaps(),
     // terser()
-
   ]
 
 };
 
 export default [
-  config,
+  isDev ? devConfig : proConfig,
   {
     // 生成 .d.ts 类型声明文件
     input: 'index.ts',
