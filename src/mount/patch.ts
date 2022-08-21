@@ -50,24 +50,55 @@ export function patchElementProp(oldValue: any, newValue: any, el: HTMLElement, 
 }
 
 export function patchArrayNodeT(oldVNode: VArrayNode, newVNode: VArrayNode, container: HTMLElement) {
+  if (!oldVNode.depArray) {
+    patchArrayNode(oldVNode, newVNode, container)
+    return
+  }
+
   const oldDepArray = oldVNode.depArray
   const newDepArray = newVNode.depArray
   const oldChildren = oldVNode.children
   const newChildren = newVNode.children
 
-  let map = new Map<any, { node: VNode, index: number }>()
-  oldDepArray.forEach((item, index) => map.set(item, { node: oldChildren[index], index }))
+  type NodeInfo = { node: VNode, index: number, used: boolean }
+  // 为映射做初始化
+  let map = new Map<any, Array<NodeInfo>>()
+  oldDepArray.forEach((item, index) => {
+    let arr = map.get(item)
+    if (!arr) map.set(item, arr = [])
+    arr.push({ node: oldChildren[index], index, used: false })
+  })
+
+  let getOld = (item: any) => {
+    let arr = map.get(item)
+    if (!arr) return false
+
+    let index = arr.findIndex(alone => !alone.used)
+
+    if (index > -1) return arr[index]
+    else return false
+  }
+
+  let moveOld = (item: any, node: NodeInfo) => {
+    let arr = map.get(item)
+    if (!arr) return
+
+    let index = arr.findIndex(alone => alone === node)
+    arr.splice(index, 1)
+  }
+
   let maxIndexSoFar = { node: oldChildren[0], index: 0 }
+
   newDepArray.forEach((item, newIndex) => {
-    if (map.has(item)) {
-      let old = map.get(item)
-      if (old!.index < maxIndexSoFar.index) {
+    let old = getOld(item)
+    if (old) {
+      if (old.index < maxIndexSoFar.index) {
         let next = maxIndexSoFar.node.el!.nextSibling
-        container.insertBefore(old!.node.el!, next)
+        container.insertBefore(old.node.el!, next)
       }
-      maxIndexSoFar = old!
-      newChildren[newIndex] = old!.node
-      map.delete(item)
+      maxIndexSoFar = old
+      newChildren[newIndex] = old.node
+      moveOld(item, old)
     } else {
       let next = maxIndexSoFar.node.el!.nextSibling
       let newNode = newChildren[newIndex]
@@ -76,7 +107,14 @@ export function patchArrayNodeT(oldVNode: VArrayNode, newVNode: VArrayNode, cont
     }
   })
 
-  map.forEach(value => unmount(value.node, container))
+
+  map.forEach(value => {
+    value.forEach(item => {
+      if (!item.used) {
+        unmount(item.node, container)
+      }
+    })
+  })
 }
 
 function patchArrayNode(oldVNode: VArrayNode, newVNode: VArrayNode, container: HTMLElement) {

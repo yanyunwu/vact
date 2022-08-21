@@ -35,6 +35,7 @@ const app = render('div', { onClick: () => state.color = 'blue' }, [
     () => state.show1 ? render('span', null, 1) : 2,
     render('span', null, 8888)
   ]),
+  render('button', { onClick: () => state.show = !state.show }, '控制显示')
 ])
 
 setInterval(() => {
@@ -60,14 +61,14 @@ createApp(render(Fragment, null, [
 // import { defineState, createApp } from 'vactapp';
 
 const state = defineState({
-  list: [1, 2, 3]
+  list: [1, 2, 2, 3]
 });
 
 const app = render('div', null, [
   () => state.list.map(num => render('span', null, num)),
   render('button', { onClick: () => state.list.push(state.list.length + 1) }, '增加'),
-  render('button', { onClick: () => state.list = [3, 2, 1] }, '增加'),
-  render('button', { onClick: () => state.list = [1, 2, 4, 3] }, '增加')
+  render('button', { onClick: () => state.list.splice(1, 1) }, '增加'),
+  render('button', { onClick: () => state.list = [1, 2, 3, 4] }, '增加')
 ])
 
 

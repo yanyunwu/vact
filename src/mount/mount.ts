@@ -58,18 +58,6 @@ export function mountChildren(children: Array<VNode>, container: HTMLElement, an
   children.forEach(child => mount(child, container, anchor, app))
 }
 
-// export function mountElement(vnode: VElement, container: HTMLElement, anchor?: HTMLElement) {
-//   const el = document.createElement(vnode.type)
-//   vnode.el = el
-//   mountElementProps(vnode)
-//   mountChildren(vnode.children, el)
-//   container.insertBefore(el, anchor!)
-// }
-
-// export function unmountElement(vnode: VElement, container: HTMLElement) {
-//   vnode.el.remove()
-// }
-
 export function mountText(vnode: VText, container: HTMLElement, anchor?: HTMLElement) {
   const el = document.createTextNode(vnode.children)
   vnode.el = el
@@ -124,59 +112,9 @@ export function unmountArrayNode(vnode: VArrayNode, container: HTMLElement, anch
   end.remove()
 }
 
-
-// export function mountElementProps(vnode: VElement) {
-//   let el = vnode.el
-//   let props = vnode.props
-
-//   // 处理标签属性
-//   for (let prop in props) {
-//     let value = props[prop]
-//     if (isActiver(value)) {
-//       let firstValue = watchProp(value, (oldValue, newValue) => patchElementProp(oldValue, newValue, el, prop))
-//       setElementProp(el, prop, firstValue)
-//     } else {
-//       setElementProp(el, prop, value)
-//     }
-//   }
-// }
-
-// /**
-//  * 处理单个dom属性
-// */
-// export function setElementProp(el: HTMLElement, prop: string, value: any) {
-//   if (isOnEvent(prop) && isFunction(value)) {
-//     let pattern = /^on(.+)$/
-//     let result = prop.match(pattern)
-//     result && el.addEventListener(result[1].toLocaleLowerCase(), value.bind(el))
-//     return
-//   }
-
-//   switch (prop) {
-//     case 'className':
-//       el.className = String(value)
-//       break
-//     case 'style':
-//       if (isObject(value)) {
-//         value = mergeStyle(value)
-//       }
-//     default:
-//       el.setAttribute(prop, value)
-//   }
-// }
-
-// /**
-//  * 将对象形式的style转化为字符串
-// */
-// function mergeStyle(style: Record<any, any>): string {
-//   let styleStringList = []
-//   for (let cssAttr in style) {
-//     styleStringList.push(`${cssAttr}:${style[cssAttr]};`)
-//   }
-//   return styleStringList.join('')
-// }
-
 export function mountComponent(vnode: VComponent, container: HTMLElement, anchor?: HTMLElement, app?: Vact) {
+  console.log(1111);
+
   const root = vnode.type.render(render)
   vnode.root = root
   mount(root, container, anchor, app)

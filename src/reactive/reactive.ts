@@ -1,4 +1,4 @@
-import { isObjectExact, isVNode } from "../utils"
+import { isArray, isObjectExact, isVNode } from "../utils"
 import { Watcher } from "./watch"
 import { runUpdate } from './update'
 
@@ -33,10 +33,8 @@ export function reactive<T extends Record<string | symbol, any>>(target: T): T {
     },
 
     set(target, prop, value, receiver) {
-      const oldValue = Reflect.get(target, prop, receiver)
       const res = Reflect.set(target, prop, value, receiver)
-      const newValue = Reflect.get(target, prop, receiver)
-      trigger(target, prop, oldValue, newValue)
+      trigger(target, prop)
       return res
     }
   }
@@ -59,10 +57,8 @@ function reactiveArray(targetArr: Array<any>, targetObj: Record<any, any>, Arrpr
       return res
     },
     set(target, prop, value, receiver) {
-      const oldValue = target.slice()
       const res = Reflect.set(target, prop, value, receiver)
-      const newValue = target
-      trigger(targetObj, Arrprop, oldValue, newValue)
+      trigger(targetObj, Arrprop)
       return res
     }
   }
@@ -73,7 +69,7 @@ function reactiveArray(targetArr: Array<any>, targetObj: Record<any, any>, Arrpr
 /**
  * 响应触发依赖
 */
-export function trigger(target: Record<any, any>, prop: string | symbol, oldValue?: any, newValue?: any) {
+export function trigger(target: Record<string | symbol, any>, prop: string | symbol) {
   let mapping: Record<string | symbol, Array<Watcher>> = targetMap.get(target)
   if (!mapping) return
 
@@ -81,13 +77,19 @@ export function trigger(target: Record<any, any>, prop: string | symbol, oldValu
   if (!mappingProp) return
 
   // mappingProp.forEach(watcher => watcher.update(oldValue, newValue))
-  mappingProp.forEach(watcher => runUpdate(watcher, oldValue, newValue))
+  mappingProp.forEach(watcher => {
+    // 针对于对数组响应做特殊处理
+    if (isArray(target[prop])) {
+      watcher.nextDepArr = target[prop]
+    }
+    runUpdate(watcher)
+  })
 }
 
 /**
  * 追踪绑定依赖
 */
-export function track(target: Record<any, any>, prop: string | symbol) {
+export function track(target: Record<string | symbol, any>, prop: string | symbol) {
   if (!activeWatcher) return
 
   let mapping: Record<string | symbol, Array<Watcher>> = targetMap.get(target)
@@ -95,6 +97,17 @@ export function track(target: Record<any, any>, prop: string | symbol) {
 
   let mappingProp: Array<Watcher> = mapping[prop]
   if (!mappingProp) mappingProp = mapping[prop] = []
+
+  // 针对于对数组响应做特殊处理
+  if (isArray(target[prop])) {
+    if (activeWatcher.depArr) {
+      activeWatcher.depArr = false
+    } else {
+      if (activeWatcher.depArr === undefined) {
+        activeWatcher.depArr = target[prop].slice()
+      }
+    }
+  }
 
   mappingProp.push(activeWatcher)
 }

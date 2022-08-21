@@ -63,17 +63,17 @@
 
   let updating = false;
   const watcherTask = [];
-  function runUpdate(watcher, oldValue, newValue) {
-      if (watcherTask.includes(watcher))
-          return;
-      watcherTask.push(watcher);
+  function runUpdate(watcher) {
+      let index = watcherTask.indexOf(watcher);
+      if (!(index > -1))
+          watcherTask.push(watcher);
       if (!updating) {
           updating = true;
           Promise.resolve()
               .then(() => {
               let watcher = undefined;
               while (watcher = watcherTask.shift()) {
-                  watcher.update(oldValue, newValue);
+                  watcher.update();
               }
           }).finally(() => {
               updating = false;
@@ -108,10 +108,8 @@
               return res;
           },
           set(target, prop, value, receiver) {
-              const oldValue = Reflect.get(target, prop, receiver);
               const res = Reflect.set(target, prop, value, receiver);
-              const newValue = Reflect.get(target, prop, receiver);
-              trigger(target, prop, oldValue, newValue);
+              trigger(target, prop);
               return res;
           }
       };
@@ -130,10 +128,8 @@
               return res;
           },
           set(target, prop, value, receiver) {
-              const oldValue = target.slice();
               const res = Reflect.set(target, prop, value, receiver);
-              const newValue = target;
-              trigger(targetObj, Arrprop, oldValue, newValue);
+              trigger(targetObj, Arrprop);
               return res;
           }
       };
@@ -142,7 +138,7 @@
   /**
    * 响应触发依赖
   */
-  function trigger(target, prop, oldValue, newValue) {
+  function trigger(target, prop) {
       let mapping = targetMap.get(target);
       if (!mapping)
           return;
@@ -150,7 +146,13 @@
       if (!mappingProp)
           return;
       // mappingProp.forEach(watcher => watcher.update(oldValue, newValue))
-      mappingProp.forEach(watcher => runUpdate(watcher, oldValue, newValue));
+      mappingProp.forEach(watcher => {
+          // 针对于对数组响应做特殊处理
+          if (isArray(target[prop])) {
+              watcher.nextDepArr = target[prop];
+          }
+          runUpdate(watcher);
+      });
   }
   /**
    * 追踪绑定依赖
@@ -164,6 +166,17 @@
       let mappingProp = mapping[prop];
       if (!mappingProp)
           mappingProp = mapping[prop] = [];
+      // 针对于对数组响应做特殊处理
+      if (isArray(target[prop])) {
+          if (activeWatcher.depArr) {
+              activeWatcher.depArr = false;
+          }
+          else {
+              if (activeWatcher.depArr === undefined) {
+                  activeWatcher.depArr = target[prop].slice();
+              }
+          }
+      }
       mappingProp.push(activeWatcher);
   }
   // 设置全局变量
@@ -326,17 +339,12 @@
       }
       let result = new component(cprops, children);
       if (isVNode(result)) {
-          return result;
+          return standarVNode(result);
       }
       else {
           result.props = cprops;
           result.children = children;
-          return {
-              type: result,
-              props,
-              children,
-              flag: VNODE_TYPE.COMPONENT
-          };
+          return standarVNode(result.render(render));
       }
   }
   function renderAlive(activer) {
@@ -359,12 +367,15 @@
           this.activeProps = activeProps;
           setActiver(null);
       }
-      update(targetPropOldValue, targetPropnewValue) {
+      update() {
+          // console.log(this.depArr, this.nextDepArr);
+          var _a;
           let newValue = this.activeProps.value;
           let oldValue = this.value;
           this.value = newValue;
-          let meta = { targetPropOldValue, targetPropnewValue };
+          let meta = { targetPropOldValue: this.depArr, targetPropnewValue: this.nextDepArr };
           this.callback(oldValue, newValue, meta);
+          this.depArr = (_a = this.nextDepArr) === null || _a === void 0 ? void 0 : _a.slice();
       }
   }
   /**
@@ -504,23 +515,50 @@
       setElementProp(el, prop, newValue);
   }
   function patchArrayNodeT(oldVNode, newVNode, container) {
+      if (!oldVNode.depArray) {
+          patchArrayNode(oldVNode, newVNode, container);
+          return;
+      }
       const oldDepArray = oldVNode.depArray;
       const newDepArray = newVNode.depArray;
       const oldChildren = oldVNode.children;
       const newChildren = newVNode.children;
+      // 为映射做初始化
       let map = new Map();
-      oldDepArray.forEach((item, index) => map.set(item, { node: oldChildren[index], index }));
+      oldDepArray.forEach((item, index) => {
+          let arr = map.get(item);
+          if (!arr)
+              map.set(item, arr = []);
+          arr.push({ node: oldChildren[index], index, used: false });
+      });
+      let getOld = (item) => {
+          let arr = map.get(item);
+          if (!arr)
+              return false;
+          let index = arr.findIndex(alone => !alone.used);
+          if (index > -1)
+              return arr[index];
+          else
+              return false;
+      };
+      let moveOld = (item, node) => {
+          let arr = map.get(item);
+          if (!arr)
+              return;
+          let index = arr.findIndex(alone => alone === node);
+          arr.splice(index, 1);
+      };
       let maxIndexSoFar = { node: oldChildren[0], index: 0 };
       newDepArray.forEach((item, newIndex) => {
-          if (map.has(item)) {
-              let old = map.get(item);
+          let old = getOld(item);
+          if (old) {
               if (old.index < maxIndexSoFar.index) {
                   let next = maxIndexSoFar.node.el.nextSibling;
                   container.insertBefore(old.node.el, next);
               }
               maxIndexSoFar = old;
               newChildren[newIndex] = old.node;
-              map.delete(item);
+              moveOld(item, old);
           }
           else {
               let next = maxIndexSoFar.node.el.nextSibling;
@@ -529,7 +567,13 @@
               maxIndexSoFar = { node: newNode, index: maxIndexSoFar.index + 1 };
           }
       });
-      map.forEach(value => unmount(value.node));
+      map.forEach(value => {
+          value.forEach(item => {
+              if (!item.used) {
+                  unmount(item.node);
+              }
+          });
+      });
   }
   function patchArrayNode(oldVNode, newVNode, container) {
       const nextSibling = oldVNode.el.nextSibling;
@@ -581,16 +625,6 @@
   function mountChildren(children, container, anchor, app) {
       children.forEach(child => mount(child, container, anchor, app));
   }
-  // export function mountElement(vnode: VElement, container: HTMLElement, anchor?: HTMLElement) {
-  //   const el = document.createElement(vnode.type)
-  //   vnode.el = el
-  //   mountElementProps(vnode)
-  //   mountChildren(vnode.children, el)
-  //   container.insertBefore(el, anchor!)
-  // }
-  // export function unmountElement(vnode: VElement, container: HTMLElement) {
-  //   vnode.el.remove()
-  // }
   function mountText(vnode, container, anchor) {
       const el = document.createTextNode(vnode.children);
       vnode.el = el;
@@ -639,53 +673,8 @@
       }
       end.remove();
   }
-  // export function mountElementProps(vnode: VElement) {
-  //   let el = vnode.el
-  //   let props = vnode.props
-  //   // 处理标签属性
-  //   for (let prop in props) {
-  //     let value = props[prop]
-  //     if (isActiver(value)) {
-  //       let firstValue = watchProp(value, (oldValue, newValue) => patchElementProp(oldValue, newValue, el, prop))
-  //       setElementProp(el, prop, firstValue)
-  //     } else {
-  //       setElementProp(el, prop, value)
-  //     }
-  //   }
-  // }
-  // /**
-  //  * 处理单个dom属性
-  // */
-  // export function setElementProp(el: HTMLElement, prop: string, value: any) {
-  //   if (isOnEvent(prop) && isFunction(value)) {
-  //     let pattern = /^on(.+)$/
-  //     let result = prop.match(pattern)
-  //     result && el.addEventListener(result[1].toLocaleLowerCase(), value.bind(el))
-  //     return
-  //   }
-  //   switch (prop) {
-  //     case 'className':
-  //       el.className = String(value)
-  //       break
-  //     case 'style':
-  //       if (isObject(value)) {
-  //         value = mergeStyle(value)
-  //       }
-  //     default:
-  //       el.setAttribute(prop, value)
-  //   }
-  // }
-  // /**
-  //  * 将对象形式的style转化为字符串
-  // */
-  // function mergeStyle(style: Record<any, any>): string {
-  //   let styleStringList = []
-  //   for (let cssAttr in style) {
-  //     styleStringList.push(`${cssAttr}:${style[cssAttr]};`)
-  //   }
-  //   return styleStringList.join('')
-  // }
   function mountComponent(vnode, container, anchor, app) {
+      console.log(1111);
       const root = vnode.type.render(render);
       vnode.root = root;
       mount(root, container, anchor, app);

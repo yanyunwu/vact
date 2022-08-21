@@ -18,6 +18,8 @@ export class Watcher<T = any> {
   value: T
   callback: (oldValue: T, newValue: T, meta?: Meta) => void
   activeProps: Activer<T>
+  depArr?: Array<any> | false
+  nextDepArr?: Array<any>
 
   constructor(activeProps: Activer<T>, callback: (oldValue: T, newValue: T, meta?: Meta) => void) {
     setActiver(this)
@@ -27,12 +29,15 @@ export class Watcher<T = any> {
     setActiver(null)
   }
 
-  update(targetPropOldValue: any, targetPropnewValue: any) {
+  update() {
+    // console.log(this.depArr, this.nextDepArr);
+
     let newValue = this.activeProps.value
     let oldValue = this.value
     this.value = newValue
-    let meta = { targetPropOldValue, targetPropnewValue }
+    let meta = { targetPropOldValue: this.depArr, targetPropnewValue: this.nextDepArr }
     this.callback(oldValue, newValue, meta)
+    this.depArr = this.nextDepArr?.slice()
   }
 }
 

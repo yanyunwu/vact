@@ -125,16 +125,11 @@ function renderComponent(component: ComponentConstructor, props: Record<string, 
   }
   let result = new component(cprops, children)
   if (isVNode(result)) {
-    return result
+    return standarVNode(result)
   } else {
     result.props = cprops
     result.children = children
-    return {
-      type: result,
-      props,
-      children,
-      flag: VNODE_TYPE.COMPONENT
-    }
+    return standarVNode(result.render(render))
   }
 }
 
