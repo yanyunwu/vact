@@ -2,19 +2,22 @@ import { track, trigger } from './reactive'
 
 export class RefImpl<T = any> {
   private _value: T
+  private _target: Record<any, any>
 
   constructor(value: T) {
     this._value = value
+    this._target = { value: this._value }
   }
 
   get value() {
-    track(this, 'value')
+    track(this._target, 'value')
     return this._value
   }
 
   set value(value) {
     this._value = value
-    trigger(this, 'value')
+    this._target.value = this._value
+    trigger(this._target, 'value')
   }
 }
 
