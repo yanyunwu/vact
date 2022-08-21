@@ -124,7 +124,7 @@ function renderComponent(component: ComponentConstructor, props: Record<string, 
     }
   }
 
-  if (component.prototype.render && isFunction(component.prototype.render)) {
+  if (component.prototype && component.prototype.render && isFunction(component.prototype.render)) {
     let Constructor = component as new () => Component
     let result = new Constructor()
     result.props = cprops

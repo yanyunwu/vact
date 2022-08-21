@@ -339,7 +339,7 @@
               cprops[prop] = cur;
           }
       }
-      if (component.prototype.render && isFunction(component.prototype.render)) {
+      if (component.prototype && component.prototype.render && isFunction(component.prototype.render)) {
           let Constructor = component;
           let result = new Constructor();
           result.props = cprops;
