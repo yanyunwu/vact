@@ -33,7 +33,7 @@ createApp(app).mount('#app')
 
 **结果如下：**
 
-![基本示例](E:\code\project\vactapp\docs\static\基本示例.gif)
+![基本示例](./static/基本示例.gif)
 
 
 
