@@ -1,6 +1,6 @@
 {
   "name": "vactapp",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "main": "lib/boundle.js",
   "types": "index.d.ts",
   "license": "MIT",
