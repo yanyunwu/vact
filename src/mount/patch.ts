@@ -9,6 +9,18 @@ export function isSameVNode(oldVNode: VNode, newVNode: VNode): boolean {
   return oldVNode.flag === newVNode.flag
 }
 
+export function getNextSibling(vnode: VNode): HTMLElement | Text | undefined {
+  switch (vnode.flag) {
+    case VNODE_TYPE.TEXT:
+    case VNODE_TYPE.ELEMENT:
+    case VNODE_TYPE.ARRAYNODE:
+    case VNODE_TYPE.FRAGMENT:
+      return vnode.el!
+    case VNODE_TYPE.ALIVE:
+      return getNextSibling(vnode.vnode!)
+  }
+}
+
 export function patch(oldVNode: VNode, newVNode: VNode, container: HTMLElement, app?: Vact): void {
 
   // 如果两个节点引用一样不需要判断
@@ -28,12 +40,14 @@ export function patch(oldVNode: VNode, newVNode: VNode, container: HTMLElement, 
       }
     } else {
       const nextSibling = oldVNode?.el?.nextSibling
+      // const nextSibling = getNextSibling(oldVNode)
       unmount(oldVNode, container)
       mount(newVNode, container, nextSibling as HTMLElement | undefined)
     }
 
   } else {
     const nextSibling = oldVNode?.el?.nextSibling
+    // const nextSibling = getNextSibling(oldVNode)
     unmount(oldVNode, container)
     mount(newVNode, container, nextSibling as HTMLElement | undefined)
   }

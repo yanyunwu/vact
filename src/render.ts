@@ -1,7 +1,7 @@
 import { active } from "./reactive/active";
 import { Activer } from './reactive'
 import { isString, isFragment, isText, isFunction, isArrayNode, isOnEvent, isVNode, isActiver, isArray } from "./utils";
-import { Component } from "./vnode/component";
+import { ComponentConstructor, FunctionConstructor, ClassConstructor } from "./vnode/component";
 import { VNode, VNODE_TYPE } from "./vnode/vnode";
 import { ArraySymbol } from "./vnode/array";
 import { AliveSymbol } from "./vnode/alive";
@@ -11,7 +11,7 @@ import { FragmentSymbol } from "./vnode/fragment";
 /**
  * 传说中的render函数
 */
-export type ComponentConstructor = (new () => Component) | ((props: Record<string, any>, children: Array<VNode>) => Child)
+
 export type H = (type: string | symbol | ComponentConstructor, props?: Record<string, any> | null, mayChildren?: Child | Array<Child>) => VNode
 // 未经过标准化的children类型
 export type Child = (() => Child) | string | VNode | Array<Child> | Activer | Exclude<(() => Child) | string | VNode | Array<Child> | Activer, any>
@@ -125,13 +125,13 @@ function renderComponent(component: ComponentConstructor, props: Record<string, 
   }
 
   if (component.prototype && component.prototype.render && isFunction(component.prototype.render)) {
-    let Constructor = component as new () => Component
-    let result = new Constructor()
+    let Constructor = component as ClassConstructor
+    let result = new Constructor(cprops, children)
     result.props = cprops
     result.children = children
     return standarVNode(result.render(render))
   } else {
-    let Fun = component as (props: Record<string, any>, children: Array<VNode>) => Child
+    let Fun = component as FunctionConstructor
     return standarVNode(Fun(cprops, children))
   }
 }

@@ -1,6 +1,5 @@
 import { patch } from "./patch";
 import { watchVNode } from "../reactive/watch";
-import { render } from "../render";
 import { Vact } from "../vact";
 import { VAlive } from "../vnode/alive";
 import { VArrayNode } from "../vnode/array";
@@ -126,7 +125,7 @@ export function unmountArrayNode(vnode: VArrayNode, container: HTMLElement, anch
 // }
 
 export function mountAlive(vnode: VAlive, container: HTMLElement, anchor?: HTMLElement, app?: Vact) {
-  let firstVNode = watchVNode(vnode.activer, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app))
+  let firstVNode = watchVNode(vnode, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app))
   vnode.vnode = firstVNode
   mount(firstVNode, container, anchor, app)
 }

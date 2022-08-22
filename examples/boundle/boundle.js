@@ -728,6 +728,10 @@
           mount(this.rootVNode, container, undefined, this);
           el === null || el === void 0 ? void 0 : el.replaceWith(...container.childNodes);
       }
+      use(plugin) {
+          const utils = { state, defineState, h: render };
+          plugin.install(utils);
+      }
   }
   function createApp(vnode, options) {
       return new Vact(vnode, options);

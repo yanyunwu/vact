@@ -1,5 +1,5 @@
 import { Activer } from "../reactive"
-import { Component } from './component'
+import { ComponentConstructor } from './component'
 
 /**
  * 虚拟dom节点类型枚举
@@ -10,7 +10,7 @@ export enum VNODE_TYPE {
   // 文本节点类型
   TEXT,
   FRAGMENT,
-  // COMPONENT,
+  COMPONENT,
   ARRAYNODE,
   ALIVE
 }
@@ -21,7 +21,7 @@ export enum VNODE_TYPE {
 export interface VNode {
 
   // 虚拟节点类型
-  type: string | symbol | Component,
+  type: string | symbol | ComponentConstructor,
 
   // 虚拟节点表标识
   flag: VNODE_TYPE

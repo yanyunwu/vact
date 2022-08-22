@@ -4,6 +4,7 @@ import { VNode, VNODE_TYPE } from "../vnode/vnode"
 import { isActiver } from "../utils"
 import { Child, standarVNode } from "../render"
 import { VArrayNode } from "../vnode/array"
+import { VAlive } from "../vnode/alive"
 
 type Meta = {
   targetPropOldValue: any,
@@ -30,8 +31,6 @@ export class Watcher<T = any> {
   }
 
   update() {
-    // console.log(this.depArr, this.nextDepArr);
-
     let newValue = this.activeProps.value
     let oldValue = this.value
     this.value = newValue
@@ -55,8 +54,8 @@ export function watch<T = any>(activeProps: (() => T) | Activer<T>, callback: (o
 /**
  * 监控可变状态dom
 */
-export function watchVNode(activeVNode: Activer<Child>, callback: (oldVNode: VNode, newVNode: VNode) => void): VNode {
-  let watcher = new Watcher<Child>(activeVNode, function (oldValue: Child, newValue: Child, meta) {
+export function watchVNode(activeVNode: VAlive, callback: (oldVNode: VNode, newVNode: VNode) => void): VNode {
+  let watcher = new Watcher<Child>(activeVNode.activer, function (oldValue: Child, newValue: Child, meta) {
     const oldVNode = oldValue as VNode
     const newVNode = standarVNode(newValue)
 
@@ -71,6 +70,7 @@ export function watchVNode(activeVNode: Activer<Child>, callback: (oldVNode: VNo
 
     callback(oldVNode, newVNode)
     watcher.value = newVNode
+    activeVNode.vnode = newVNode
   })
 
   return watcher.value = standarVNode(watcher.value)
