@@ -21,6 +21,6 @@
     "webpack-dev-server": "^4.9.3"
   },
   "dependencies": {
-    "vactapp": "^0.8.1"
+    "vactapp": "^0.8.11"
   }
 }
