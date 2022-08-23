@@ -1,11 +1,11 @@
 {
   "name": "vactapp",
-  "version": "0.8.10",
+  "version": "0.8.11",
   "main": "lib/boundle.js",
   "types": "index.d.ts",
   "license": "MIT",
   "author": "烟云雾沧海",
-  "description": "创世纪前端响应式新框架",
+  "description": "前端响应式新框架",
   "scripts": {
     "dev": "rollup -c --watch",
     "test": "jest --passWithNoTests",
