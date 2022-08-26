@@ -74,6 +74,14 @@ export function patchArrayNodeT(oldVNode: VArrayNode, newVNode: VArrayNode, cont
   const oldChildren = oldVNode.children
   const newChildren = newVNode.children
 
+  if (!oldDepArray.length || !newDepArray.length) {
+    patchArrayNode(oldVNode, newVNode, container)
+    return
+  }
+
+  newVNode.anchor = oldVNode.anchor
+  newVNode.el = oldVNode.el
+
   type NodeInfo = { node: VNode, index: number, used: boolean }
   // 为映射做初始化
   let map = new Map<any, Array<NodeInfo>>()
@@ -107,18 +115,33 @@ export function patchArrayNodeT(oldVNode: VArrayNode, newVNode: VArrayNode, cont
     let old = getOld(item)
     if (old) {
       if (old.index < maxIndexSoFar.index) {
-        let next = maxIndexSoFar.node.el!.nextSibling
+        let next: ChildNode | null
+        if (newIndex > 0) {
+          next = newChildren[newIndex - 1].el!.nextSibling
+        } else {
+          next = maxIndexSoFar.node.el!.nextSibling
+        }
+
         VNodeInsertBefore(container, old.node, next)
         // container.insertBefore(old.node.el!, next)
+      } else {
+        maxIndexSoFar = old
       }
-      maxIndexSoFar = old
+
       newChildren[newIndex] = old.node
       moveOld(item, old)
     } else {
-      let next = maxIndexSoFar.node.el!.nextSibling
+      // let next = maxIndexSoFar.node.el!.nextSibling
+      let next: ChildNode | null
+      if (newIndex > 0) {
+        next = newChildren[newIndex - 1].el!.nextSibling
+      } else {
+        next = maxIndexSoFar.node.el!.nextSibling
+      }
+
       let newNode = newChildren[newIndex]
       mount(newNode, container, next as HTMLElement | undefined)
-      maxIndexSoFar = { node: newNode, index: maxIndexSoFar.index + 1 }
+      // maxIndexSoFar = { node: newNode, index: maxIndexSoFar.index + 1 }
     }
   })
 

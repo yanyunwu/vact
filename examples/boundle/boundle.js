@@ -16,9 +16,9 @@
       // 文本节点类型
       VNODE_TYPE[VNODE_TYPE["TEXT"] = 1] = "TEXT";
       VNODE_TYPE[VNODE_TYPE["FRAGMENT"] = 2] = "FRAGMENT";
-      // COMPONENT,
-      VNODE_TYPE[VNODE_TYPE["ARRAYNODE"] = 3] = "ARRAYNODE";
-      VNODE_TYPE[VNODE_TYPE["ALIVE"] = 4] = "ALIVE";
+      VNODE_TYPE[VNODE_TYPE["COMPONENT"] = 3] = "COMPONENT";
+      VNODE_TYPE[VNODE_TYPE["ARRAYNODE"] = 4] = "ARRAYNODE";
+      VNODE_TYPE[VNODE_TYPE["ALIVE"] = 5] = "ALIVE";
   })(VNODE_TYPE || (VNODE_TYPE = {}));
 
   const FragmentSymbol = Symbol('Fragment');
@@ -341,7 +341,7 @@
       }
       if (component.prototype && component.prototype.render && isFunction(component.prototype.render)) {
           let Constructor = component;
-          let result = new Constructor();
+          let result = new Constructor(cprops, children);
           result.props = cprops;
           result.children = children;
           return standarVNode(result.render(render));
@@ -372,7 +372,6 @@
           setActiver(null);
       }
       update() {
-          // console.log(this.depArr, this.nextDepArr);
           var _a;
           let newValue = this.activeProps.value;
           let oldValue = this.value;
@@ -396,7 +395,7 @@
    * 监控可变状态dom
   */
   function watchVNode(activeVNode, callback) {
-      let watcher = new Watcher(activeVNode, function (oldValue, newValue, meta) {
+      let watcher = new Watcher(activeVNode.activer, function (oldValue, newValue, meta) {
           const oldVNode = oldValue;
           const newVNode = standarVNode(newValue);
           // 对于数组节点后期需要记录它的响应式数组用于节点更新
@@ -409,6 +408,7 @@
           }
           callback(oldVNode, newVNode);
           watcher.value = newVNode;
+          activeVNode.vnode = newVNode;
       });
       return watcher.value = standarVNode(watcher.value);
   }
@@ -501,12 +501,14 @@
           }
           else {
               const nextSibling = (_a = oldVNode === null || oldVNode === void 0 ? void 0 : oldVNode.el) === null || _a === void 0 ? void 0 : _a.nextSibling;
+              // const nextSibling = getNextSibling(oldVNode)
               unmount(oldVNode);
               mount(newVNode, container, nextSibling);
           }
       }
       else {
           const nextSibling = (_b = oldVNode === null || oldVNode === void 0 ? void 0 : oldVNode.el) === null || _b === void 0 ? void 0 : _b.nextSibling;
+          // const nextSibling = getNextSibling(oldVNode)
           unmount(oldVNode);
           mount(newVNode, container, nextSibling);
       }
@@ -527,6 +529,12 @@
       const newDepArray = newVNode.depArray;
       const oldChildren = oldVNode.children;
       const newChildren = newVNode.children;
+      if (!oldDepArray.length || !newDepArray.length) {
+          patchArrayNode(oldVNode, newVNode, container);
+          return;
+      }
+      newVNode.anchor = oldVNode.anchor;
+      newVNode.el = oldVNode.el;
       // 为映射做初始化
       let map = new Map();
       oldDepArray.forEach((item, index) => {
@@ -557,19 +565,34 @@
           let old = getOld(item);
           if (old) {
               if (old.index < maxIndexSoFar.index) {
-                  let next = maxIndexSoFar.node.el.nextSibling;
+                  let next;
+                  if (newIndex > 0) {
+                      next = newChildren[newIndex - 1].el.nextSibling;
+                  }
+                  else {
+                      next = maxIndexSoFar.node.el.nextSibling;
+                  }
                   VNodeInsertBefore(container, old.node, next);
                   // container.insertBefore(old.node.el!, next)
               }
-              maxIndexSoFar = old;
+              else {
+                  maxIndexSoFar = old;
+              }
               newChildren[newIndex] = old.node;
               moveOld(item, old);
           }
           else {
-              let next = maxIndexSoFar.node.el.nextSibling;
+              // let next = maxIndexSoFar.node.el!.nextSibling
+              let next;
+              if (newIndex > 0) {
+                  next = newChildren[newIndex - 1].el.nextSibling;
+              }
+              else {
+                  next = maxIndexSoFar.node.el.nextSibling;
+              }
               let newNode = newChildren[newIndex];
               mount(newNode, container, next);
-              maxIndexSoFar = { node: newNode, index: maxIndexSoFar.index + 1 };
+              // maxIndexSoFar = { node: newNode, index: maxIndexSoFar.index + 1 }
           }
       });
       map.forEach(value => {
@@ -705,7 +728,7 @@
   //   unmount(vnode.root, container)
   // }
   function mountAlive(vnode, container, anchor, app) {
-      let firstVNode = watchVNode(vnode.activer, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app));
+      let firstVNode = watchVNode(vnode, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app));
       vnode.vnode = firstVNode;
       mount(firstVNode, container, anchor, app);
   }
@@ -731,6 +754,7 @@
       use(plugin) {
           const utils = { state, defineState, h: render };
           plugin.install(utils);
+          return this;
       }
   }
   function createApp(vnode, options) {

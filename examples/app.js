@@ -61,14 +61,14 @@ createApp(render(Fragment, null, [
 // import { defineState, createApp } from 'vactapp';
 
 const state = defineState({
-  list: [1, 2, 2, 3]
+  list: [3, 4, 5, 2, 2, 1, 6]
 });
 
 const app = render('div', null, [
   () => state.list.map(num => render('span', null, num)),
   render('button', { onClick: () => state.list.push(state.list.length + 1) }, '增加'),
-  render('button', { onClick: () => state.list.splice(1, 1) }, '增加'),
-  render('button', { onClick: () => state.list = [1, 2, 3, 4, 2] }, '增加')
+  render('button', { onClick: () => state.list = [] }, '增加'),
+  render('button', { onClick: () => state.list = [1, 2, 3, 4, 2, 6, 5] }, '增加')
 ])
 
 
