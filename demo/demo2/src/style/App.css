@@ -6,4 +6,19 @@
 .app-img img{
   height: 200px;
   width: 200px;
+  border-radius: 5px;
+}
+
+.btn {
+  margin: 10px;
+  width: 100px;
+  height: 40px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 15px;
+  transition: all 0.3s;
+}
+
+.btn:hover {
+  border: 1px solid skyblue
 }

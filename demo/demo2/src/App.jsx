@@ -7,7 +7,7 @@ function App() {
     <HelloWorld />
     <div className='app-img'><img src={require('./assets/main.gif')} /></div>
     <div className='app-img'>
-      <button onClick={() => count.value++}>开始{count.value}</button>
+      <button className='btn' onClick={() => count.value++}>开始{count.value}</button>
     </div>
   </div>
 }
