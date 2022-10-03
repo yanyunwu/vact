@@ -1,6 +1,4 @@
-import { Activer } from "../reactive";
-import { VNode, VNODE_TYPE } from "./vnode";
-
+import { VNode, VNODE_TYPE, VNodeProps } from "./vnode";
 
 export interface VElement extends VNode {
 
@@ -8,7 +6,7 @@ export interface VElement extends VNode {
   type: string,
 
   // 虚拟节点属性
-  props: Record<string, any>,
+  props: VNodeProps,
 
   // 虚拟节点子节点
   children: Array<VNode>,
@@ -17,5 +15,4 @@ export interface VElement extends VNode {
   flag: VNODE_TYPE.ELEMENT
 
   el: HTMLElement
-
 }

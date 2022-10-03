@@ -1,6 +1,7 @@
 import { VNode, VNODE_TYPE } from "./vnode";
 
 export const ArraySymbol = Symbol('ArrayNode');
+export type VArrayType = typeof ArraySymbol
 export interface VArrayNode extends VNode {
 
   // 虚拟节点类型

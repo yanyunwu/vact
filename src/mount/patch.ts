@@ -1,27 +1,31 @@
-import { unmount, mount } from "./mount";
-import { Vact } from "../vact";
-import { VArrayNode } from "../vnode/array";
-import { VText } from "../vnode/text";
-import { VNode, VNODE_TYPE } from "../vnode/vnode";
-import { setElementProp } from "./element";
+import {mount, unmount} from "./mount";
+import { App } from "../app";
+import {VArrayNode} from "../vnode";
+import {VText} from "../vnode";
+import {VNode, VNODE_TYPE} from "../vnode";
+import {setElementProp} from "./element";
+import {VComponent} from "../vnode";
 
 export function isSameVNode(oldVNode: VNode, newVNode: VNode): boolean {
   return oldVNode.flag === newVNode.flag
 }
 
-export function getNextSibling(vnode: VNode): HTMLElement | Text | undefined {
-  switch (vnode.flag) {
+// todo
+export function getNextSibling(vNode: VNode): ChildNode | null {
+  switch (vNode.flag) {
     case VNODE_TYPE.TEXT:
     case VNODE_TYPE.ELEMENT:
     case VNODE_TYPE.ARRAYNODE:
     case VNODE_TYPE.FRAGMENT:
-      return vnode.el!
+      return vNode.el!.nextSibling
+    case VNODE_TYPE.COMPONENT:
+      return (vNode as VComponent).root.el!.nextSibling
     case VNODE_TYPE.ALIVE:
-      return getNextSibling(vnode.vnode!)
+      return getNextSibling(vNode.vnode!)
   }
 }
 
-export function patch(oldVNode: VNode, newVNode: VNode, container: HTMLElement, app?: Vact): void {
+export function patch(oldVNode: VNode, newVNode: VNode, container: HTMLElement, app?: App): void {
 
   // 如果两个节点引用一样不需要判断
   if (oldVNode === newVNode) return
@@ -39,15 +43,15 @@ export function patch(oldVNode: VNode, newVNode: VNode, container: HTMLElement, 
         patchArrayNode(<VArrayNode>oldVNode, <VArrayNode>newVNode, container)
       }
     } else {
-      const nextSibling = oldVNode?.el?.nextSibling
-      // const nextSibling = getNextSibling(oldVNode)
+      // const nextSibling = oldVNode?.el?.nextSibling
+      const nextSibling = getNextSibling(oldVNode)
       unmount(oldVNode, container)
       mount(newVNode, container, nextSibling as HTMLElement | undefined)
     }
 
   } else {
-    const nextSibling = oldVNode?.el?.nextSibling
-    // const nextSibling = getNextSibling(oldVNode)
+    // const nextSibling = oldVNode?.el?.nextSibling
+    const nextSibling = getNextSibling(oldVNode)
     unmount(oldVNode, container)
     mount(newVNode, container, nextSibling as HTMLElement | undefined)
   }
@@ -117,9 +121,9 @@ export function patchArrayNodeT(oldVNode: VArrayNode, newVNode: VArrayNode, cont
       if (old.index < maxIndexSoFar.index) {
         let next: ChildNode | null
         if (newIndex > 0) {
-          next = newChildren[newIndex - 1].el!.nextSibling
+          next = getNextSibling(newChildren[newIndex - 1]) as ChildNode | null
         } else {
-          next = maxIndexSoFar.node.el!.nextSibling
+          next = getNextSibling(maxIndexSoFar.node) as ChildNode | null
         }
 
         VNodeInsertBefore(container, old.node, next)
@@ -134,9 +138,9 @@ export function patchArrayNodeT(oldVNode: VArrayNode, newVNode: VArrayNode, cont
       // let next = maxIndexSoFar.node.el!.nextSibling
       let next: ChildNode | null
       if (newIndex > 0) {
-        next = newChildren[newIndex - 1].el!.nextSibling
+        next = getNextSibling(newChildren[newIndex - 1]) as ChildNode | null
       } else {
-        next = maxIndexSoFar.node.el!.nextSibling
+        next = getNextSibling(maxIndexSoFar.node) as ChildNode | null
       }
 
       let newNode = newChildren[newIndex]
@@ -161,10 +165,17 @@ function patchArrayNode(oldVNode: VArrayNode, newVNode: VArrayNode, container: H
   mount(newVNode, container, nextSibling as HTMLElement | undefined)
 }
 
+
+/**
+ * 将一个虚拟节点挂载到一个锚点前面
+ */
 function VNodeInsertBefore(container: HTMLElement, node: VNode, next: HTMLElement | undefined | Text | ChildNode | null) {
   if (node.flag === VNODE_TYPE.ELEMENT || node.flag === VNODE_TYPE.TEXT) {
     container.insertBefore(node.el!, next!)
-  } else if (node.flag === VNODE_TYPE.ARRAYNODE || node.flag === VNODE_TYPE.FRAGMENT) {
+  } else if (node.flag === VNODE_TYPE.COMPONENT) {
+    container.insertBefore((node as VComponent).root.el!, next!)
+  }
+  else if (node.flag === VNODE_TYPE.ARRAYNODE || node.flag === VNODE_TYPE.FRAGMENT) {
     let start: ChildNode | null | undefined = node.anchor
     let nextToMove = start?.nextSibling
     let end: ChildNode | null | undefined = node.el

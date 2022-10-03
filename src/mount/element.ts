@@ -1,13 +1,13 @@
-import { Vact } from "../vact"
+import { App } from "../app"
 import { watchProp } from "../reactive"
 import { isActiver, isOnEvent, isFunction, isObject } from "../utils"
-import { VElement } from "../vnode/element"
+import { VElement } from "../vnode"
 import { mountChildren } from "./mount"
 import { patchElementProp } from "./patch"
 
 
 
-export function mountElement(vnode: VElement, container: HTMLElement, anchor?: HTMLElement, app?: Vact) {
+export function mountElement(vnode: VElement, container: HTMLElement, anchor?: HTMLElement, app?: App) {
   const el = document.createElement(vnode.type)
   vnode.el = el
   mountElementProps(vnode)

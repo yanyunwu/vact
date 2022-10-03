@@ -1,5 +1,5 @@
 import { Activer } from "../reactive"
-import { ComponentConstructor } from './component'
+import { ComponentType } from './component'
 
 /**
  * 虚拟dom节点类型枚举
@@ -21,7 +21,7 @@ export enum VNODE_TYPE {
 export interface VNode {
 
   // 虚拟节点类型
-  type: string | symbol | ComponentConstructor,
+  type: string | symbol | ComponentType,
 
   // 虚拟节点表标识
   flag: VNODE_TYPE
@@ -40,5 +40,15 @@ export interface VNode {
   // 目前存在的节点
   vnode?: VNode
 
+}
+
+// 未经过标准化的childVNode类型
+export type NotFunctionOriginVNode= string | VNode | Array<OriginVNode> | Activer
+export type WithFunctionOriginVNode= (() => OriginVNode) | NotFunctionOriginVNode
+export type OriginVNode= WithFunctionOriginVNode | Exclude<any, WithFunctionOriginVNode>
+
+/** 虚拟节点属性 todo */
+export interface VNodeProps {
+  [propName: string]: any
 }
 

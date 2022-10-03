@@ -1,30 +1,19 @@
-import { defineState } from "./reactive"
 import { H } from './render'
-import { VNode } from "./vnode/vnode"
+import { VNode, VNodeProps, OriginVNode } from "./vnode"
+
 
 /**
- * 根类组件(向下兼容)
- * 已废弃
+ * 根类组件用于类型提示
+ * 抽象类
 */
 
-interface Config {
-  data?: Record<string | symbol, any>
-}
-
 export abstract class Component {
-  // 组件配置
-  private config: Config
-  // 组件响应式数据
-  public data: Record<any, any>
   // 组件属性
-  props?: Record<any, any>
+  abstract readonly props?: VNodeProps
   // 组件子元素
-  children?: Record<string, any>
+  abstract readonly children?: Array<OriginVNode>
 
-  constructor(config: Config = {}) {
-    this.config = config
-    this.data = defineState(config.data || {})
-  }
+  abstract created?(): void
 
   abstract render(h: H): VNode
 }

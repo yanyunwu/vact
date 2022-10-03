@@ -2,7 +2,7 @@ import { track, trigger } from './reactive'
 
 export class RefImpl<T = any> {
   private _value: T
-  private _target: Record<any, any>
+  private readonly _target: Record<any, any>
 
   constructor(value: T) {
     this._value = value

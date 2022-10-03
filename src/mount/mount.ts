@@ -1,16 +1,18 @@
 import { patch } from "./patch";
-import { watchVNode } from "../reactive/watch";
-import { Vact } from "../vact";
-import { VAlive } from "../vnode/alive";
-import { VArrayNode } from "../vnode/array";
-import { VComponent } from "../vnode/component";
-import { VElement } from "../vnode/element";
-import { VFragment } from "../vnode/fragment";
-import { VText } from '../vnode/text'
-import { VNode, VNODE_TYPE } from "../vnode/vnode";
+import { watchVNode } from "../reactive";
+import { App } from "../app";
+import {
+  VAlive,
+  VArrayNode,
+  VComponent,
+  VElement,
+  VFragment,
+  VText
+} from "../vnode";
+import { VNode, VNODE_TYPE } from "../vnode";
 import { mountElement, unmountElement } from "./element";
 
-export function mount(vnode: VNode, container: HTMLElement, anchor?: HTMLElement, app?: Vact) {
+export function mount(vnode: VNode, container: HTMLElement, anchor?: HTMLElement, app?: App) {
   switch (vnode.flag) {
     case VNODE_TYPE.ELEMENT:
       mountElement(vnode as VElement, container, anchor, app)
@@ -24,9 +26,9 @@ export function mount(vnode: VNode, container: HTMLElement, anchor?: HTMLElement
     case VNODE_TYPE.ARRAYNODE:
       mountArrayNode(vnode as VArrayNode, container, anchor, app)
       break
-    // case VNODE_TYPE.COMPONENT:
-    //   mountComponent(vnode as VComponent, container, anchor, app)
-    //   break
+    case VNODE_TYPE.COMPONENT:
+      mountComponent(vnode as VComponent, container, anchor, app)
+      break
     case VNODE_TYPE.ALIVE:
       mountAlive(vnode as VAlive, container, anchor, app)
       break
@@ -47,13 +49,13 @@ export function unmount(vnode: VNode, container: HTMLElement) {
     case VNODE_TYPE.ARRAYNODE:
       unmountArrayNode(vnode as VArrayNode, container)
       break
-    // case VNODE_TYPE.COMPONENT:
-    //   unmountComponent(vnode as VComponent, container)
-    //   break
+    case VNODE_TYPE.COMPONENT:
+      unmountComponent(vnode as VComponent, container)
+      break
   }
 }
 
-export function mountChildren(children: Array<VNode>, container: HTMLElement, anchor?: HTMLElement, app?: Vact) {
+export function mountChildren(children: Array<VNode>, container: HTMLElement, anchor?: HTMLElement, app?: App) {
   children.forEach(child => mount(child, container, anchor, app))
 }
 
@@ -67,7 +69,7 @@ export function unmountText(vnode: VText, container: HTMLElement) {
   vnode.el.remove()
 }
 
-export function mountFragment(vnode: VFragment, container: HTMLElement, anchor?: HTMLElement, app?: Vact) {
+export function mountFragment(vnode: VFragment, container: HTMLElement, anchor?: HTMLElement, app?: App) {
   const start = document.createTextNode('')
   const end = document.createTextNode('')
   vnode.anchor = start
@@ -89,7 +91,7 @@ export function unmountFragment(vnode: VFragment, container: HTMLElement) {
   end.remove()
 }
 
-export function mountArrayNode(vnode: VArrayNode, container: HTMLElement, anchor?: HTMLElement, app?: Vact) {
+export function mountArrayNode(vnode: VArrayNode, container: HTMLElement, anchor?: HTMLElement, app?: App) {
   const start = document.createTextNode('')
   const end = document.createTextNode('')
   vnode.anchor = start
@@ -111,20 +113,16 @@ export function unmountArrayNode(vnode: VArrayNode, container: HTMLElement, anch
   end.remove()
 }
 
-// export function mountComponent(vnode: VComponent, container: HTMLElement, anchor?: HTMLElement, app?: Vact) {
-//   console.log(1111);
+export function mountComponent(vNode: VComponent, container: HTMLElement, anchor?: HTMLElement, app?: App) {
+  const root = vNode.root
+  mount(root, container, anchor, app)
+}
 
-//   const root = vnode.type.render(render)
-//   vnode.root = root
-//   mount(root, container, anchor, app)
-//   vnode.el = root.el!
-// }
+export function unmountComponent(vNode: VComponent, container: HTMLElement) {
+  unmount(vNode.root, container)
+}
 
-// export function unmountComponent(vnode: VComponent, container: HTMLElement) {
-//   unmount(vnode.root, container)
-// }
-
-export function mountAlive(vnode: VAlive, container: HTMLElement, anchor?: HTMLElement, app?: Vact) {
+export function mountAlive(vnode: VAlive, container: HTMLElement, anchor?: HTMLElement, app?: App) {
   let firstVNode = watchVNode(vnode, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app))
   vnode.vnode = firstVNode
   mount(firstVNode, container, anchor, app)

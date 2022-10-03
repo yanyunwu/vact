@@ -47,14 +47,12 @@ setInterval(() => {
 })
 const app = render('div', null, [
   () => show.list.map(item => () => !item.notShow && render('span', null, () => item.num)),
-  render('button', { onClick: () => show.list[0].num = 999 }, '切换')
+  render('button', { onClick: () => show.list[1].notShow = true }, '切换')
 ])
 
 
 
-createApp(render(Fragment, null, [
-  1, render('button', null, 123)
-])).mount('#app') */
+createApp(app).mount('#app')*/
 
 // import { Fragment } from "vactapp";
 // import { createVNode } from "vactapp";

@@ -1,8 +1,8 @@
 import { Activer } from "../reactive"
-import { Child } from "../render"
-import { VNode, VNODE_TYPE } from "./vnode"
+import { VNode, VNODE_TYPE, OriginVNode } from "./vnode"
 
 export const AliveSymbol = Symbol('Alive')
+export type VAliveType = typeof AliveSymbol
 export interface VAlive extends VNode {
 
   // 虚拟节点类型
@@ -10,7 +10,7 @@ export interface VAlive extends VNode {
   // 虚拟节点表标识
   flag: VNODE_TYPE.ELEMENT
 
-  activer: Activer<Child>
+  activer: Activer<OriginVNode>
   // 目前存在的节点
   vnode: VNode
 }

@@ -1,25 +1,25 @@
 import { mount } from "./mount/mount";
 import { defineState, state } from "./reactive";
-import { RefImpl } from "./reactive/ref";
+import { RefImpl } from "./reactive";
 import { render } from "./render";
-import { VNode } from "./vnode/vnode";
+import { VNode } from "./vnode";
 import { H } from './render'
 
 export interface Options {
   arrayDiff?: boolean
 }
 
-export interface VactUtils {
+export interface AppUtils {
   state<T extends unknown>(value: T): RefImpl<T>
   defineState<T extends Record<string | symbol, any>>(target: T): T
   h: H
 }
 
-export interface VactPlugin {
-  install(utils: VactUtils): void
+export interface AppPlugin {
+  install(utils: AppUtils): void
 }
 
-export class Vact {
+export class App {
   rootVNode: VNode
   options: Options
 
@@ -35,14 +35,14 @@ export class Vact {
     el?.replaceWith(...container.childNodes)
   }
 
-  use(plugin: VactPlugin) {
-    const utils: VactUtils = { state, defineState, h: render }
+  use(plugin: AppPlugin) {
+    const utils: AppUtils = { state, defineState, h: render }
     plugin.install(utils)
     return this
   }
 }
 
-export function createApp(vnode: VNode, options?: Options): Vact {
-  return new Vact(vnode, options)
+export function createApp(vnode: VNode, options?: Options): App {
+  return new App(vnode, options)
 }
 

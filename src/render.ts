@@ -1,20 +1,42 @@
-import { active } from "./reactive/active";
-import { Activer } from './reactive'
-import { isString, isFragment, isText, isFunction, isArrayNode, isOnEvent, isVNode, isActiver, isArray } from "./utils";
-import { ComponentConstructor, FunctionConstructor, ClassConstructor } from "./vnode/component";
-import { VNode, VNODE_TYPE } from "./vnode/vnode";
-import { ArraySymbol } from "./vnode/array";
-import { AliveSymbol } from "./vnode/alive";
-import { TextSymbol } from './vnode/text'
-import { FragmentSymbol } from "./vnode/fragment";
+import {active} from "./reactive";
+import {Activer} from './reactive'
+import {
+  isActiver,
+  isArray,
+  isArrayNode,
+  isFragment,
+  isFunction,
+  isOnEvent,
+  isString,
+  isText,
+  isVNode} from "./utils";
+import {
+  ClassComponentType,
+  ComponentType,
+  FunctionComponentType,
+  VComponent
+} from "./vnode";
+import {
+  OriginVNode,
+  VNode,
+  VNODE_TYPE,
+  VNodeProps
+} from "./vnode";
+import {
+  ArraySymbol,
+  AliveSymbol,
+  TextSymbol,
+  FragmentSymbol,
+  VComponentSymbol
+} from "./vnode";
 
 /**
  * 传说中的render函数
 */
 
-export type H = (type: string | symbol | ComponentConstructor, props?: Record<string, any> | null, mayChildren?: Child | Array<Child>) => VNode
-// 未经过标准化的children类型
-export type Child = (() => Child) | string | VNode | Array<Child> | Activer | Exclude<(() => Child) | string | VNode | Array<Child> | Activer, any>
+export type HSymbol = typeof TextSymbol | typeof FragmentSymbol | typeof AliveSymbol | typeof ArraySymbol
+export type HType = string | HSymbol | ComponentType
+export type H = (type: HType,  props?: VNodeProps, children?: OriginVNode | Array<OriginVNode>) => VNode
 
 /**
  * 函数转化为activer转化为VAlive
@@ -23,15 +45,16 @@ export type Child = (() => Child) | string | VNode | Array<Child> | Activer | Ex
  * 数组转化为VArray
  * 其他转化为VText
 */
-export function standarVNode(node: Child): VNode {
-  if (isVNode(node)) return node
+export function createVNode(originVNode: OriginVNode): VNode {
+  if (isVNode(originVNode)) return originVNode
 
-  if (isFunction(node)) return renderAlive(active(node))
-  else if (isActiver(node)) return renderAlive(node)
-  else if (isString(node)) return renderText(node)
-  else if (isArray(node)) return renderArrayNode(node.map(item => standarVNode(item)))
+  if (isFunction(originVNode)) return renderAlive(active(originVNode))
+  else if (isActiver(originVNode)) return renderAlive(originVNode)
+  else if (isString(originVNode)) return renderText(originVNode)
+  else if (isArray(originVNode)) return renderArrayNode(originVNode.map(item => createVNode(item)))
   else {
-    let value = node
+    // todo
+    let value = originVNode
     let retText: VNode
     if (!value && typeof value !== 'number') retText = renderText('')
     else retText = renderText(String(value))
@@ -44,34 +67,51 @@ export function standarVNode(node: Child): VNode {
  * text(不需要props)、fragment(不需要props)、element、component为显性创建
  * array(不需要props)、alive(不需要props)为隐形创建
 */
-export function render(type: string | symbol | ComponentConstructor, props?: Record<string, any> | null, mayChildren?: Child | Array<Child>): VNode {
+export function renderApi(type: HType, props?: VNodeProps, children?: OriginVNode | Array<OriginVNode>): VNode {
+  return render(type, props, children)
+}
+
+export function render(type: HType, originProps?: VNodeProps, originChildren?: OriginVNode | Array<OriginVNode>): VNode {
   // text的children比较特殊先处理
   if (isText(type)) {
-    return renderText(String(mayChildren))
+    return renderText(String(originChildren))
   }
 
-  let children: Array<Child>
   // 预处理 处理为单个的children
-  if (isArray(mayChildren)) children = mayChildren
-  else children = [mayChildren as Child]
-
-  let standardChildren: Array<VNode> = children.map(child => standarVNode(child))
+  let originChildrenList: Array<OriginVNode> = []
+  if (isArray(originChildren)) originChildrenList.push(...originChildren)
+  else originChildrenList.push(originChildren)
+  // 创建VNode列表
+  let vNodeChildren: Array<VNode> = originChildrenList.map(originChild => createVNode(originChild))
 
   // 属性预处理
-  if (props) {
-    for (const prop in props) {
-      // 以on开头的事件不需要处理
-      if (!isOnEvent(prop) && isFunction(props[prop])) {
-        props[prop] = active(props[prop])
-      }
+  let props: VNodeProps = originProps || {}
+  handleProps(props)
+
+  if (isString(type)) return renderElement(type, props , vNodeChildren)
+  if (isFragment(type)) return renderFragment(vNodeChildren)
+  if (isArrayNode(type)) return renderArrayNode(vNodeChildren)
+  if (isFunction(type)) return renderComponent(type, props, vNodeChildren)
+  throw '传入参数不合法'
+}
+
+
+/**
+ * 对属性进行预处理
+ */
+function handleProps(originProps: VNodeProps): VNodeProps {
+  for (const prop in originProps) {
+    // 以on开头的事件不需要处理
+    if (
+        !isOnEvent(prop) &&
+        isFunction(originProps[prop])
+    ) {
+      // 如不为on且为函数则判断为响应式
+      originProps[prop] = active(originProps[prop])
     }
   }
 
-  if (isString(type)) return renderElement(type, props || {}, standardChildren)
-  if (isFragment(type)) return renderFragment(standardChildren)
-  if (isArrayNode(type)) return renderArrayNode(standardChildren)
-  if (isFunction(type)) return renderComponent(type, props || {}, standardChildren)
-  throw '传入参数不合法'
+  return originProps
 }
 
 function renderText(text: string): VNode {
@@ -107,32 +147,53 @@ function renderArrayNode(children: Array<VNode>): VNode {
   }
 }
 
-
-// 判断是普通函数还是构造函数
-function renderComponent(component: ComponentConstructor, props: Record<string, any>, children: Array<VNode>): VNode {
-  let cprops: Record<string, any> = {}
-  for (let prop in props) {
-    let cur = props[prop]
-    if (isActiver(cur)) {
-      Object.defineProperty(cprops, prop, {
+function createComponentProps(props: VNodeProps): VNodeProps {
+  let componentProps:VNodeProps = {}
+  for (const prop in props) {
+    let curProp = props[prop]
+    if (isActiver(curProp)) {
+      Object.defineProperty(componentProps, prop, {
         get() {
-          return (<Activer>cur).value
+          return (curProp as Activer).value
         }
       })
     } else {
-      cprops[prop] = cur
+      componentProps[prop] = curProp
     }
   }
 
-  if (component.prototype && component.prototype.render && isFunction(component.prototype.render)) {
-    let Constructor = component as ClassConstructor
-    let result = new Constructor(cprops, children)
-    result.props = cprops
+  return componentProps
+}
+
+// 判断是普通函数还是构造函数
+function renderComponent(component: ComponentType, props: VNodeProps, children: Array<VNode>): VComponent {
+  let componentProps = createComponentProps(props)
+
+  if (
+      component.prototype &&
+      component.prototype.render &&
+      isFunction(component.prototype.render)
+  ) {
+    let ClassComponent = component as ClassComponentType
+    let result = new ClassComponent(componentProps, children)
+    result.props = componentProps
     result.children = children
-    return standarVNode(result.render(render))
+    return {
+      type: VComponentSymbol,
+      root: createVNode(result.render(render)),
+      props: componentProps,
+      children: children,
+      flag: VNODE_TYPE.COMPONENT
+    }
   } else {
-    let Fun = component as FunctionConstructor
-    return standarVNode(Fun(cprops, children))
+    let FunctionComponent = component as FunctionComponentType
+    return {
+      type: VComponentSymbol,
+      root: createVNode(FunctionComponent(componentProps, children)),
+      props: componentProps,
+      children: children,
+      flag: VNODE_TYPE.COMPONENT
+    }
   }
 }
 

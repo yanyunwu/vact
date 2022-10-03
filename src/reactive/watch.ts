@@ -1,10 +1,10 @@
 import { setActiver } from "./reactive"
 import { active, Activer } from './active'
-import { VNode, VNODE_TYPE } from "../vnode/vnode"
+import { VNode, VNODE_TYPE, OriginVNode } from "../vnode"
 import { isActiver } from "../utils"
-import { Child, standarVNode } from "../render"
-import { VArrayNode } from "../vnode/array"
-import { VAlive } from "../vnode/alive"
+import { createVNode } from "../render"
+import { VArrayNode } from "../vnode"
+import { VAlive } from "../vnode"
 
 type Meta = {
   targetPropOldValue: any,
@@ -55,9 +55,9 @@ export function watch<T = any>(activeProps: (() => T) | Activer<T>, callback: (o
  * 监控可变状态dom
 */
 export function watchVNode(activeVNode: VAlive, callback: (oldVNode: VNode, newVNode: VNode) => void): VNode {
-  let watcher = new Watcher<Child>(activeVNode.activer, function (oldValue: Child, newValue: Child, meta) {
+  let watcher = new Watcher<OriginVNode>(activeVNode.activer, function (oldValue: OriginVNode, newValue: OriginVNode, meta) {
     const oldVNode = oldValue as VNode
-    const newVNode = standarVNode(newValue)
+    const newVNode = createVNode(newValue)
 
     // 对于数组节点后期需要记录它的响应式数组用于节点更新
     if (oldVNode.flag === VNODE_TYPE.ARRAYNODE) {
@@ -73,7 +73,7 @@ export function watchVNode(activeVNode: VAlive, callback: (oldVNode: VNode, newV
     activeVNode.vnode = newVNode
   })
 
-  return watcher.value = standarVNode(watcher.value)
+  return watcher.value = createVNode(watcher.value)
 }
 
 

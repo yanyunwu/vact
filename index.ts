@@ -1,4 +1,4 @@
-import Vact from './src'
+import vact from './src'
 export * from './src'
-export default Vact
+export default vact
 

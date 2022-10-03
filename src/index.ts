@@ -1,12 +1,24 @@
 import { mount } from "./mount/mount";
 import { render } from './render'
-import { TextSymbol } from './vnode/text'
-import { FragmentSymbol } from './vnode/fragment'
+import {
+    TextSymbol,
+    FragmentSymbol,
+    ArraySymbol,
+    VComponentSymbol
+} from './vnode'
 import { Component } from './component'
-import { Vact, createApp } from './vact'
+import { App, createApp } from './app'
 
 export * from './reactive'
-export { mount, render, TextSymbol as Text, FragmentSymbol as Fragment, Component }
+export {
+    mount,
+    render,
+    TextSymbol as VText,
+    FragmentSymbol as VFragment,
+    ArraySymbol as VArray,
+    VComponentSymbol as  VComponent,
+    Component
+}
 export { render as createVNode }
 export { createApp }
-export default Vact
+export default App
