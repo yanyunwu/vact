@@ -21,7 +21,7 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: ['@babel/preset-env'],
-            plugins: ["syntax-jsx", "transform-vact-jsx"]
+            plugins: ["syntax-jsx", "transform-vactapp-jsx"]
           }
         }
       },

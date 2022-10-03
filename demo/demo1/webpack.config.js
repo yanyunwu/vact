@@ -29,7 +29,7 @@ module.exports = {
             presets: ['@babel/preset-env'],
             plugins: [
               "syntax-jsx",
-              "transform-vact-jsx"
+              "transform-vactapp-jsx"
             ]
           }
         }
