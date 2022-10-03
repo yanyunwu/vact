@@ -180,7 +180,7 @@ function renderComponent(component: ComponentType, props: VNodeProps, children: 
     result.children = children
     return {
       type: VComponentSymbol,
-      root: createVNode(result.render(render)),
+      root: createVNode(result.render(renderApi)),
       props: componentProps,
       children: children,
       flag: VNODE_TYPE.COMPONENT

@@ -1,4 +1,4 @@
-import { VNode, VNODE_TYPE } from "./vnode";
+import {VNode, VNODE_TYPE, VNodeElement} from "./vnode";
 
 export const ArraySymbol = Symbol('ArrayNode');
 export type VArrayType = typeof ArraySymbol

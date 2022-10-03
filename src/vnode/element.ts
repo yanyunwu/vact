@@ -1,4 +1,4 @@
-import { VNode, VNODE_TYPE, VNodeProps } from "./vnode";
+import {VNode, VNODE_TYPE, VNodeElement, VNodeProps} from "./vnode";
 
 export interface VElement extends VNode {
 

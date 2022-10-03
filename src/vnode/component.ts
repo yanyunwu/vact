@@ -1,5 +1,5 @@
 import { Activer } from "../reactive";
-import {VNode, VNODE_TYPE, OriginVNode, VNodeProps} from "./vnode";
+import {VNode, VNODE_TYPE, OriginVNode, VNodeProps, VNodeElement} from "./vnode";
 import { H } from '../render'
 
 
@@ -34,7 +34,7 @@ export interface VComponent extends VNode {
 
   root: VNode,
   // root的el
-  el?: Text | HTMLElement
+  el?: VNodeElement
 
 }
 

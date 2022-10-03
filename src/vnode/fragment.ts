@@ -1,4 +1,4 @@
-import { VNode, VNODE_TYPE } from "./vnode";
+import {VNode, VNODE_TYPE, VNodeElement} from "./vnode";
 
 export const FragmentSymbol = Symbol('Fragment');
 export interface VFragment extends VNode {

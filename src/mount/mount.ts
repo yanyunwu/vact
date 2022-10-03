@@ -6,13 +6,13 @@ import {
   VArrayNode,
   VComponent,
   VElement,
-  VFragment,
+  VFragment, VNodeElement,
   VText
 } from "../vnode";
 import { VNode, VNODE_TYPE } from "../vnode";
 import { mountElement, unmountElement } from "./element";
 
-export function mount(vnode: VNode, container: HTMLElement, anchor?: HTMLElement, app?: App) {
+export function mount(vnode: VNode, container: HTMLElement, anchor?: VNodeElement, app?: App) {
   switch (vnode.flag) {
     case VNODE_TYPE.ELEMENT:
       mountElement(vnode as VElement, container, anchor, app)
@@ -55,11 +55,11 @@ export function unmount(vnode: VNode, container: HTMLElement) {
   }
 }
 
-export function mountChildren(children: Array<VNode>, container: HTMLElement, anchor?: HTMLElement, app?: App) {
+export function mountChildren(children: Array<VNode>, container: HTMLElement, anchor?: VNodeElement, app?: App) {
   children.forEach(child => mount(child, container, anchor, app))
 }
 
-export function mountText(vnode: VText, container: HTMLElement, anchor?: HTMLElement) {
+export function mountText(vnode: VText, container: HTMLElement, anchor?: VNodeElement) {
   const el = document.createTextNode(vnode.children)
   vnode.el = el
   container.insertBefore(el, anchor!)
@@ -69,7 +69,7 @@ export function unmountText(vnode: VText, container: HTMLElement) {
   vnode.el.remove()
 }
 
-export function mountFragment(vnode: VFragment, container: HTMLElement, anchor?: HTMLElement, app?: App) {
+export function mountFragment(vnode: VFragment, container: HTMLElement, anchor?: VNodeElement, app?: App) {
   const start = document.createTextNode('')
   const end = document.createTextNode('')
   vnode.anchor = start
@@ -91,7 +91,7 @@ export function unmountFragment(vnode: VFragment, container: HTMLElement) {
   end.remove()
 }
 
-export function mountArrayNode(vnode: VArrayNode, container: HTMLElement, anchor?: HTMLElement, app?: App) {
+export function mountArrayNode(vnode: VArrayNode, container: HTMLElement, anchor?: VNodeElement, app?: App) {
   const start = document.createTextNode('')
   const end = document.createTextNode('')
   vnode.anchor = start
@@ -113,7 +113,7 @@ export function unmountArrayNode(vnode: VArrayNode, container: HTMLElement, anch
   end.remove()
 }
 
-export function mountComponent(vNode: VComponent, container: HTMLElement, anchor?: HTMLElement, app?: App) {
+export function mountComponent(vNode: VComponent, container: HTMLElement, anchor?: VNodeElement, app?: App) {
   const root = vNode.root
   mount(root, container, anchor, app)
 }
@@ -122,7 +122,7 @@ export function unmountComponent(vNode: VComponent, container: HTMLElement) {
   unmount(vNode.root, container)
 }
 
-export function mountAlive(vnode: VAlive, container: HTMLElement, anchor?: HTMLElement, app?: App) {
+export function mountAlive(vnode: VAlive, container: HTMLElement, anchor?: VNodeElement, app?: App) {
   let firstVNode = watchVNode(vnode, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app))
   vnode.vnode = firstVNode
   mount(firstVNode, container, anchor, app)

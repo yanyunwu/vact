@@ -15,6 +15,8 @@ export enum VNODE_TYPE {
   ALIVE
 }
 
+export type VNodeElement = ChildNode
+
 /**
  * 虚拟dom接口类型
 */
@@ -33,8 +35,8 @@ export interface VNode {
   children?: Array<VNode> | string,
 
   // 真实节点
-  el?: HTMLElement | Text
-  anchor?: Text
+  el?: VNodeElement
+  anchor?: VNodeElement
 
   activer?: Activer
   // 目前存在的节点

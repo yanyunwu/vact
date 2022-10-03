@@ -46,14 +46,14 @@ export function patch(oldVNode: VNode, newVNode: VNode, container: HTMLElement, 
       // const nextSibling = oldVNode?.el?.nextSibling
       const nextSibling = getNextSibling(oldVNode)
       unmount(oldVNode, container)
-      mount(newVNode, container, nextSibling as HTMLElement | undefined)
+      mount(newVNode, container, nextSibling as ChildNode | undefined)
     }
 
   } else {
     // const nextSibling = oldVNode?.el?.nextSibling
     const nextSibling = getNextSibling(oldVNode)
     unmount(oldVNode, container)
-    mount(newVNode, container, nextSibling as HTMLElement | undefined)
+    mount(newVNode, container, nextSibling as ChildNode | undefined)
   }
 
 }
@@ -126,7 +126,7 @@ export function patchArrayNodeT(oldVNode: VArrayNode, newVNode: VArrayNode, cont
           next = getNextSibling(maxIndexSoFar.node) as ChildNode | null
         }
 
-        VNodeInsertBefore(container, old.node, next)
+        VNodeInsertBefore(container, old.node, next as ChildNode | undefined)
         // container.insertBefore(old.node.el!, next)
       } else {
         maxIndexSoFar = old
@@ -162,14 +162,14 @@ export function patchArrayNodeT(oldVNode: VArrayNode, newVNode: VArrayNode, cont
 function patchArrayNode(oldVNode: VArrayNode, newVNode: VArrayNode, container: HTMLElement) {
   const nextSibling = oldVNode.el.nextSibling
   unmount(oldVNode, container)
-  mount(newVNode, container, nextSibling as HTMLElement | undefined)
+  mount(newVNode, container, nextSibling as ChildNode | undefined)
 }
 
 
 /**
  * 将一个虚拟节点挂载到一个锚点前面
  */
-function VNodeInsertBefore(container: HTMLElement, node: VNode, next: HTMLElement | undefined | Text | ChildNode | null) {
+function VNodeInsertBefore(container: HTMLElement, node: VNode, next?: ChildNode) {
   if (node.flag === VNODE_TYPE.ELEMENT || node.flag === VNODE_TYPE.TEXT) {
     container.insertBefore(node.el!, next!)
   } else if (node.flag === VNODE_TYPE.COMPONENT) {
