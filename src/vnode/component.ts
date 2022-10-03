@@ -1,11 +1,18 @@
 import {VNode, VNODE_TYPE, OriginVNode, VNodeProps} from "./vnode";
 import { ComponentLifeCycle } from '../lifeCycle'
 import { ComponentInstance } from '../component'
+import {AppUtils} from '../plugin'
 
+export interface ComponentContext {
+  props: Record<string, any>
+  children: Array<VNode>
+  life: ComponentLifeCycle
+  utils: AppUtils
+}
 
 /** 函数组件类型 */
 export interface FunctionComponentType {
-  (props: Record<string, any>, children: Array<VNode>, life: ComponentLifeCycle): OriginVNode
+  (context: ComponentContext): OriginVNode
 }
 
 /** 类组件类型 */

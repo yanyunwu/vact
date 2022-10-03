@@ -30,6 +30,7 @@ import {
   VComponentSymbol
 } from "./vnode";
 import {ComponentLifeCycle, createClassComponentLife} from "./lifeCycle";
+import {appUtils} from "./plugin";
 
 /**
  * 传说中的render函数
@@ -186,9 +187,12 @@ function renderComponent(component: ComponentType, props: VNodeProps, children: 
   ) {
     let ClassComponent = component as ClassComponentType
     let result = new ClassComponent(componentProps, children)
+
     result.props = componentProps
     result.children = children
+
     let lifeCycle = createClassComponentLife(result)
+
     let vn = result.render(renderApi)
     lifeCycle.emit('created')
     let vc: VComponent = {
@@ -206,7 +210,7 @@ function renderComponent(component: ComponentType, props: VNodeProps, children: 
   } else {
     let FunctionComponent = component as FunctionComponentType
     let lifeCycle = new ComponentLifeCycle()
-    let vn = FunctionComponent(componentProps, children, lifeCycle)
+    let vn = FunctionComponent({props: componentProps, children: children, life: lifeCycle, utils: appUtils})
     lifeCycle.emit('created')
     let vc: VComponent =  {
       type: VComponentSymbol,
