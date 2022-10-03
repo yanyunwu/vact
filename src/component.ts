@@ -1,5 +1,7 @@
 import { H } from './render'
 import { VNode, VNodeProps, OriginVNode, FunctionComponentType } from "./vnode"
+import {appUtils, AppUtils} from "./plugin";
+import {ComponentLifeCycle} from "./lifeCycle";
 
 
 /**
@@ -11,6 +13,8 @@ import { VNode, VNodeProps, OriginVNode, FunctionComponentType } from "./vnode"
 export interface ComponentInstance {
   props?: VNodeProps
   children?: Array<OriginVNode>
+  utils: AppUtils
+  life?: ComponentLifeCycle
   render(h?: H): OriginVNode
 
   /** 组件示例创建之后触发 */
@@ -34,11 +38,14 @@ export interface ComponentInstance {
 
 export abstract class Component implements ComponentInstance{
   // 组件属性
-  abstract readonly props?: VNodeProps
+  abstract props?: VNodeProps
   // 组件子元素
-  abstract readonly children?: Array<OriginVNode>
+  abstract children?: Array<OriginVNode>
 
   abstract render(h?: H): VNode
+
+  utils: AppUtils = appUtils
+  abstract life?: ComponentLifeCycle
 
   /** 组件示例创建之后触发 */
   abstract created?(): void

@@ -1,32 +1,22 @@
 import { mount } from "./mount/mount";
-import { defineState, state } from "./reactive";
-import { RefImpl } from "./reactive";
-import { render } from "./render";
 import { VNode } from "./vnode";
-import { H } from './render'
 import {isString} from "./utils";
+import {  AppPlugin, appUtils } from './plugin'
 
 export interface Options {
   arrayDiff?: boolean
-}
-
-export interface AppUtils {
-  state<T extends unknown>(value: T): RefImpl<T>
-  defineState<T extends Record<string | symbol, any>>(target: T): T
-  h: H
-}
-
-export interface AppPlugin {
-  install(utils: AppUtils): void
 }
 
 export class App {
   rootVNode: VNode
   options: Options
 
-  constructor(vnode: VNode, options?: Options) {
-    this.rootVNode = vnode
+  private pluginList: Array<AppPlugin>
+
+  constructor(vNode: VNode, options?: Options) {
+    this.rootVNode = vNode
     this.options = options || {}
+    this.pluginList = []
   }
 
   mount(selector?: string | HTMLElement): void {
@@ -43,13 +33,15 @@ export class App {
   }
 
   use(plugin: AppPlugin) {
-    const utils: AppUtils = { state, defineState, h: render }
-    plugin.install(utils)
+    let index = this.pluginList.indexOf(plugin)
+    if(index > -1) return this
+
+    plugin.install({utils: appUtils})
     return this
   }
 }
 
-export function createApp(vnode: VNode, options?: Options): App {
-  return new App(vnode, options)
+export function createApp(vNode: VNode, options?: Options): App {
+  return new App(vNode, options)
 }
 

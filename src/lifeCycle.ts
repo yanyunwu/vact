@@ -92,6 +92,7 @@ export function createClassComponentLife(component: ComponentInstance) {
     ] = ['created', 'beforeMounted', 'readyMounted', 'mounted', 'beforeUnMounted', 'unMounted']
 
     let lifeCycle = new ComponentLifeCycle()
+    component.life = lifeCycle
 
     lifeNames.forEach(lifeName => {
         let fn = component[lifeName]
