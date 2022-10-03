@@ -1,16 +1,16 @@
-import { Activer } from "../reactive";
-import {VNode, VNODE_TYPE, OriginVNode, VNodeProps, VNodeElement} from "./vnode";
-import { H } from '../render'
+import {VNode, VNODE_TYPE, OriginVNode, VNodeProps} from "./vnode";
+import { ComponentLifeCycle } from '../lifeCycle'
+import { ComponentInstance } from '../component'
 
 
 /** 函数组件类型 */
 export interface FunctionComponentType {
-  (props: Record<any, any>, children: Array<VNode>): OriginVNode
+  (props: Record<string, any>, children: Array<VNode>, life: ComponentLifeCycle): OriginVNode
 }
 
 /** 类组件类型 */
 export interface ClassComponentType {
-  new (props: Record<string, any>, children: Array<VNode>): Component
+  new (props: Record<string, any>, children: Array<VNode>): ComponentInstance
 }
 
 export type ComponentType = FunctionComponentType | ClassComponentType
@@ -33,21 +33,8 @@ export interface VComponent extends VNode {
   flag: VNODE_TYPE.COMPONENT
 
   root: VNode,
-  // root的el
-  el?: VNodeElement
 
-}
+  lifeStyleInstance: ComponentLifeCycle
 
-// todo
-export interface Component {
-  props: Record<string, any>
-  children: Array<Activer | VNode | string>
-  render(h?: H): OriginVNode
-}
-
-
-// todo
-function defineComponent<T extends ComponentType>(Component: T): T {
-  return Component
 }
 

@@ -1,5 +1,5 @@
-import { render } from '../src/render'
-import { VNODE_TYPE } from '../src/vnode/vnode';
+import { render } from '../src'
+import { VNODE_TYPE } from '../src/vnode';
 
 
 test('function: render(type, props, children): VNode', () => {

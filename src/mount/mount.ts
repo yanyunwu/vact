@@ -115,11 +115,15 @@ export function unmountArrayNode(vnode: VArrayNode, container: HTMLElement, anch
 
 export function mountComponent(vNode: VComponent, container: HTMLElement, anchor?: VNodeElement, app?: App) {
   const root = vNode.root
+  vNode.lifeStyleInstance.emit('readyMounted')
   mount(root, container, anchor, app)
+  vNode.lifeStyleInstance.emit('mounted')
 }
 
 export function unmountComponent(vNode: VComponent, container: HTMLElement) {
+  vNode.lifeStyleInstance.emit('beforeUnMounted')
   unmount(vNode.root, container)
+  vNode.lifeStyleInstance.emit('unMounted')
 }
 
 export function mountAlive(vnode: VAlive, container: HTMLElement, anchor?: VNodeElement, app?: App) {

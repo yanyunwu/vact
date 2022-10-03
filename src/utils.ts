@@ -1,8 +1,6 @@
-import { VNode, VNODE_TYPE } from './vnode/vnode'
-import { Activer } from './reactive/active'
-import { FragmentSymbol } from './vnode/fragment'
-import { TextSymbol } from './vnode/text'
-import { ArraySymbol } from './vnode/array'
+import { VNode, VNODE_TYPE } from './vnode'
+import { Activer } from './reactive'
+import { FragmentSymbol, TextSymbol, ArraySymbol } from './vnode'
 
 export function isString(content: unknown): content is string {
   return typeof content === 'string'

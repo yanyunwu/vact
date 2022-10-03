@@ -4,6 +4,7 @@ import { RefImpl } from "./reactive";
 import { render } from "./render";
 import { VNode } from "./vnode";
 import { H } from './render'
+import {isString} from "./utils";
 
 export interface Options {
   arrayDiff?: boolean
@@ -28,11 +29,17 @@ export class App {
     this.options = options || {}
   }
 
-  mount(selector: string): void {
-    const el = document.querySelector(selector)
-    let container = document.createElement('div')
-    mount(this.rootVNode, container, undefined, this)
-    el?.replaceWith(...container.childNodes)
+  mount(selector?: string | HTMLElement): void {
+    if(selector) {
+      const el =  (isString(selector) ? document.querySelector(selector) : selector) || document.body
+      mount(this.rootVNode, el as HTMLElement, undefined, this)
+    }else {
+      mount(this.rootVNode, document.body, undefined, this)
+    }
+
+    // let container = document.createElement('div')
+    // mount(this.rootVNode, container, undefined, this)
+    // el?.replaceWith(...container.childNodes)
   }
 
   use(plugin: AppPlugin) {

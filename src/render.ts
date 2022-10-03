@@ -29,6 +29,7 @@ import {
   FragmentSymbol,
   VComponentSymbol
 } from "./vnode";
+import {ComponentLifeCycle, createClassComponentLife} from "./lifeCycle";
 
 /**
  * 传说中的render函数
@@ -67,8 +68,8 @@ export function createVNode(originVNode: OriginVNode): VNode {
  * text(不需要props)、fragment(不需要props)、element、component为显性创建
  * array(不需要props)、alive(不需要props)为隐形创建
 */
-export function renderApi(type: HType, props?: VNodeProps, children?: OriginVNode | Array<OriginVNode>): VNode {
-  return render(type, props, children)
+export function renderApi(type: HType, props?: VNodeProps | null, children?: OriginVNode | Array<OriginVNode>): VNode {
+  return render(type, props || undefined, children)
 }
 
 export function render(type: HType, originProps?: VNodeProps, originChildren?: OriginVNode | Array<OriginVNode>): VNode {
@@ -165,6 +166,15 @@ function createComponentProps(props: VNodeProps): VNodeProps {
   return componentProps
 }
 
+// 渲染一个活跃的节点
+function renderAlive(activer: Activer): VNode {
+  return {
+    type: AliveSymbol,
+    flag: VNODE_TYPE.ALIVE,
+    activer
+  }
+}
+
 // 判断是普通函数还是构造函数
 function renderComponent(component: ComponentType, props: VNodeProps, children: Array<VNode>): VComponent {
   let componentProps = createComponentProps(props)
@@ -178,30 +188,42 @@ function renderComponent(component: ComponentType, props: VNodeProps, children: 
     let result = new ClassComponent(componentProps, children)
     result.props = componentProps
     result.children = children
-    return {
+    let lifeCycle = createClassComponentLife(result)
+    let vn = result.render(renderApi)
+    lifeCycle.emit('created')
+    let vc: VComponent = {
       type: VComponentSymbol,
-      root: createVNode(result.render(renderApi)),
+      root: createVNode(vn),
       props: componentProps,
       children: children,
-      flag: VNODE_TYPE.COMPONENT
+      flag: VNODE_TYPE.COMPONENT,
+      lifeStyleInstance: lifeCycle
     }
+
+    lifeCycle.emit('beforeMounted')
+
+    return vc
   } else {
     let FunctionComponent = component as FunctionComponentType
-    return {
+    let lifeCycle = new ComponentLifeCycle()
+    let vn = FunctionComponent(componentProps, children, lifeCycle)
+    lifeCycle.emit('created')
+    let vc: VComponent =  {
       type: VComponentSymbol,
-      root: createVNode(FunctionComponent(componentProps, children)),
+      root: createVNode(vn),
       props: componentProps,
       children: children,
-      flag: VNODE_TYPE.COMPONENT
+      flag: VNODE_TYPE.COMPONENT,
+      lifeStyleInstance: lifeCycle
     }
+
+    lifeCycle.emit('beforeMounted')
+    return vc
   }
 }
 
 
-function renderAlive(activer: Activer): VNode {
-  return {
-    type: AliveSymbol,
-    flag: VNODE_TYPE.ALIVE,
-    activer
-  }
-}
+
+
+
+
