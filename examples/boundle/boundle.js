@@ -6,6 +6,16 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Vact = {}));
 })(this, (function (exports) { 'use strict';
 
+  const TextSymbol = Symbol('Text');
+
+  const FragmentSymbol = Symbol('Fragment');
+
+  const VComponentSymbol = Symbol('VComponent');
+
+  const ArraySymbol = Symbol('ArrayNode');
+
+  const AliveSymbol = Symbol('Alive');
+
   /**
    * 虚拟dom节点类型枚举
   */
@@ -20,12 +30,6 @@
       VNODE_TYPE[VNODE_TYPE["ARRAYNODE"] = 4] = "ARRAYNODE";
       VNODE_TYPE[VNODE_TYPE["ALIVE"] = 5] = "ALIVE";
   })(VNODE_TYPE || (VNODE_TYPE = {}));
-
-  const FragmentSymbol = Symbol('Fragment');
-
-  const TextSymbol = Symbol('Text');
-
-  const ArraySymbol = Symbol('ArrayNode');
 
   function isString(content) {
       return typeof content === 'string';
@@ -183,6 +187,10 @@
   function setActiver(fn) {
       activeWatcher = fn;
   }
+  // 设置全局变量
+  function getActiver() {
+      return activeWatcher;
+  }
 
   class RefImpl {
       constructor(value) {
@@ -229,9 +237,49 @@
       return new Activer(fn);
   }
 
-  const AliveSymbol = Symbol('Alive');
-
-  const VComponentSymbol = Symbol('VComponent');
+  class ComponentLifeCycle {
+      constructor() {
+          this.createdList = [];
+          this.beforeMountedList = [];
+          this.readyMountedList = [];
+          this.mountedList = [];
+          this.beforeUnMountedList = [];
+          this.unMountedList = [];
+      }
+      created(fn) {
+          this.createdList.push(fn);
+      }
+      beforeMounted(fn) {
+          this.beforeMountedList.push(fn);
+      }
+      readyMounted(fn) {
+          this.readyMountedList.push(fn);
+      }
+      mounted(fn) {
+          this.mountedList.push(fn);
+      }
+      beforeUnMounted(fn) {
+          this.beforeUnMountedList.push(fn);
+      }
+      unMounted(fn) {
+          this.unMountedList.push(fn);
+      }
+      emit(lifeName) {
+          this[`${lifeName}List`].forEach(fn => fn());
+      }
+  }
+  // 生成类组件生命周期实例
+  function createClassComponentLife(component) {
+      let lifeNames = ['created', 'beforeMounted', 'readyMounted', 'mounted', 'beforeUnMounted', 'unMounted'];
+      let lifeCycle = new ComponentLifeCycle();
+      lifeNames.forEach(lifeName => {
+          let fn = component[lifeName];
+          if (!fn)
+              return;
+          lifeCycle[lifeName](fn.bind(component));
+      });
+      return lifeCycle;
+  }
 
   /**
    * 函数转化为activer转化为VAlive
@@ -261,6 +309,13 @@
               retText = renderText(String(value));
           return retText;
       }
+  }
+  /**
+   * text(不需要props)、fragment(不需要props)、element、component为显性创建
+   * array(不需要props)、alive(不需要props)为隐形创建
+  */
+  function renderApi(type, props, children) {
+      return render(type, props || undefined, children);
   }
   function render(type, originProps, originChildren) {
       // text的children比较特殊先处理
@@ -348,6 +403,14 @@
       }
       return componentProps;
   }
+  // 渲染一个活跃的节点
+  function renderAlive(activer) {
+      return {
+          type: AliveSymbol,
+          flag: VNODE_TYPE.ALIVE,
+          activer
+      };
+  }
   // 判断是普通函数还是构造函数
   function renderComponent(component, props, children) {
       let componentProps = createComponentProps(props);
@@ -358,31 +421,36 @@
           let result = new ClassComponent(componentProps, children);
           result.props = componentProps;
           result.children = children;
-          return {
+          let lifeCycle = createClassComponentLife(result);
+          let vn = result.render(renderApi);
+          lifeCycle.emit('created');
+          let vc = {
               type: VComponentSymbol,
-              root: createVNode(result.render(render)),
+              root: createVNode(vn),
               props: componentProps,
               children: children,
-              flag: VNODE_TYPE.COMPONENT
+              flag: VNODE_TYPE.COMPONENT,
+              lifeStyleInstance: lifeCycle
           };
+          lifeCycle.emit('beforeMounted');
+          return vc;
       }
       else {
           let FunctionComponent = component;
-          return {
+          let lifeCycle = new ComponentLifeCycle();
+          let vn = FunctionComponent(componentProps, children, lifeCycle);
+          lifeCycle.emit('created');
+          let vc = {
               type: VComponentSymbol,
-              root: createVNode(FunctionComponent(componentProps, children)),
+              root: createVNode(vn),
               props: componentProps,
               children: children,
-              flag: VNODE_TYPE.COMPONENT
+              flag: VNODE_TYPE.COMPONENT,
+              lifeStyleInstance: lifeCycle
           };
+          lifeCycle.emit('beforeMounted');
+          return vc;
       }
-  }
-  function renderAlive(activer) {
-      return {
-          type: AliveSymbol,
-          flag: VNODE_TYPE.ALIVE,
-          activer
-      };
   }
 
   /**
@@ -764,10 +832,14 @@
   }
   function mountComponent(vNode, container, anchor, app) {
       const root = vNode.root;
+      vNode.lifeStyleInstance.emit('readyMounted');
       mount(root, container, anchor, app);
+      vNode.lifeStyleInstance.emit('mounted');
   }
   function unmountComponent(vNode, container) {
+      vNode.lifeStyleInstance.emit('beforeUnMounted');
       unmount(vNode.root);
+      vNode.lifeStyleInstance.emit('unMounted');
   }
   function mountAlive(vnode, container, anchor, app) {
       let firstVNode = watchVNode(vnode, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app));
@@ -776,22 +848,24 @@
   }
 
   class Component {
-      constructor(config = {}) {
-          this.config = config;
-          this.data = defineState(config.data || {});
-      }
   }
 
-  class Vact {
+  class App {
       constructor(vnode, options) {
           this.rootVNode = vnode;
           this.options = options || {};
       }
       mount(selector) {
-          const el = document.querySelector(selector);
-          let container = document.createElement('div');
-          mount(this.rootVNode, container, undefined, this);
-          el === null || el === void 0 ? void 0 : el.replaceWith(...container.childNodes);
+          if (selector) {
+              const el = document.querySelector(selector) || document.body;
+              mount(this.rootVNode, el, undefined, this);
+          }
+          else {
+              mount(this.rootVNode, document.body, undefined, this);
+          }
+          // let container = document.createElement('div')
+          // mount(this.rootVNode, container, undefined, this)
+          // el?.replaceWith(...container.childNodes)
       }
       use(plugin) {
           const utils = { state, defineState, h: render };
@@ -800,22 +874,31 @@
       }
   }
   function createApp(vnode, options) {
-      return new Vact(vnode, options);
+      return new App(vnode, options);
   }
 
   exports.Activer = Activer;
   exports.Component = Component;
-  exports.Fragment = FragmentSymbol;
-  exports.Text = TextSymbol;
+  exports.RefImpl = RefImpl;
+  exports.VArray = ArraySymbol;
+  exports.VComponent = VComponentSymbol;
+  exports.VFragment = FragmentSymbol;
+  exports.VText = TextSymbol;
+  exports.Watcher = Watcher;
+  exports.active = active;
   exports.createApp = createApp;
-  exports.createVNode = render;
-  exports["default"] = Vact;
+  exports.createVNode = renderApi;
+  exports["default"] = App;
   exports.defineState = defineState;
+  exports.getActiver = getActiver;
   exports.mount = mount;
   exports.reactive = reactive;
   exports.ref = ref;
-  exports.render = render;
+  exports.render = renderApi;
+  exports.setActiver = setActiver;
   exports.state = state;
+  exports.track = track;
+  exports.trigger = trigger;
   exports.watch = watch;
   exports.watchProp = watchProp;
   exports.watchVNode = watchVNode;
