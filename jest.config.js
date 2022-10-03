@@ -4,9 +4,10 @@ module.exports = {
   testEnvironment: 'node',
   testPathIgnorePatterns: [
     '/node_modules',
-    './src',
-    './lib',
-    './examples',
     './demo',
+    './docs',
+    './examples',
+    './lib',
+    './src',
   ],
 };
