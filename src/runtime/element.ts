@@ -8,6 +8,9 @@ import { patchElementProp } from "./patch"
 
 
 export function mountElement(vnode: VElement, container: HTMLElement, anchor?: VNodeElement, app?: App) {
+
+
+
   const el = document.createElement(vnode.type)
   vnode.el = el
   mountElementProps(vnode)
