@@ -1,14 +1,15 @@
 import { setActiver } from "./reactive"
 import { active, Activer } from './active'
-import { VNode, VNODE_TYPE, OriginVNode } from "../vnode"
-import { isActiver } from "../utils"
+import { VNode, OriginVNode } from "../vnode"
+import {isActiver, isFunction, isVArrayNode} from "../utils"
 import { createVNode } from "../render"
-import { VArrayNode } from "../vnode"
 import { VAlive } from "../vnode"
+import {renderWithOrder} from "../directive/directive";
+import {App} from "../app";
 
 type Meta = {
   targetPropOldValue: any,
-  targetPropnewValue: any
+  targetPropNewValue: any
 }
 
 /**
@@ -34,7 +35,7 @@ export class Watcher<T = any> {
     let newValue = this.activeProps.value
     let oldValue = this.value
     this.value = newValue
-    let meta = { targetPropOldValue: this.depArr, targetPropnewValue: this.nextDepArr }
+    let meta = { targetPropOldValue: this.depArr, targetPropNewValue: this.nextDepArr }
     this.callback(oldValue, newValue, meta)
     this.depArr = this.nextDepArr?.slice()
   }
@@ -54,18 +55,19 @@ export function watch<T = any>(activeProps: (() => T) | Activer<T>, callback: (o
 /**
  * 监控可变状态dom
 */
-export function watchVNode(activeVNode: VAlive, callback: (oldVNode: VNode, newVNode: VNode) => void): VNode {
+export function watchVNode(activeVNode: VAlive, callback: (oldVNode: VNode, newVNode: VNode) => void, app: App): VNode {
   let watcher = new Watcher<OriginVNode>(activeVNode.activer, function (oldValue: OriginVNode, newValue: OriginVNode, meta) {
     const oldVNode = oldValue as VNode
-    const newVNode = createVNode(newValue)
+    const newVNode = renderWithOrder(createVNode(ifFunctionToString(newValue)), app)
+
 
     // 对于数组节点后期需要记录它的响应式数组用于节点更新
-    if (oldVNode.flag === VNODE_TYPE.ARRAYNODE) {
-      (<VArrayNode>oldVNode).depArray = meta?.targetPropOldValue
+    if (isVArrayNode(oldVNode)) {
+      oldVNode.depArray = meta?.targetPropOldValue
     }
     // 对于数组节点后期需要记录它的响应式数组用于节点更新
-    if (newVNode.flag === VNODE_TYPE.ARRAYNODE) {
-      (<VArrayNode>newVNode).depArray = meta?.targetPropnewValue
+    if (isVArrayNode(newVNode)) {
+      newVNode.depArray = meta?.targetPropNewValue
     }
 
     callback(oldVNode, newVNode)
@@ -73,9 +75,16 @@ export function watchVNode(activeVNode: VAlive, callback: (oldVNode: VNode, newV
     activeVNode.vnode = newVNode
   })
 
-  return watcher.value = createVNode(watcher.value)
+  return watcher.value = renderWithOrder(createVNode(ifFunctionToString(watcher.value)), app)
 }
 
+function ifFunctionToString(value: any): Exclude<any, Function> {
+  if (isFunction(value)) {
+    console.warn('你确定要返回一个函数到页面？')
+    return String(value)
+  }
+  return value
+}
 
 /**
  * 监控可变dom的prop

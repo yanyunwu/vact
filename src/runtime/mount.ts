@@ -127,7 +127,7 @@ export function unmountComponent(vNode: VComponent, container: HTMLElement) {
 }
 
 export function mountAlive(vNode: VAlive, container: HTMLElement, anchor?: VNodeElement, app?: App) {
-  let firstVNode = watchVNode(vNode, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app))
+  let firstVNode = watchVNode(vNode, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app), app!)
   vNode.vnode = firstVNode
   mount(firstVNode, container, anchor, app)
 }

@@ -1,4 +1,4 @@
-import { mount } from "./mount/mount";
+import { mount } from "./runtime/mount";
 import { renderApi } from './render'
 import {
     TextSymbol,
