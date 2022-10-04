@@ -64,6 +64,25 @@
   function isArray(content) {
       return Array.isArray(content);
   }
+  // 判断是否是一个数组节点
+  function isVArrayNode(node) {
+      return node.flag === VNODE_TYPE.ARRAYNODE;
+  }
+  function isVTextNode(node) {
+      return node.flag === VNODE_TYPE.TEXT;
+  }
+  function isVElementNode(node) {
+      return node.flag === VNODE_TYPE.ELEMENT;
+  }
+  function isVFragmentNode(node) {
+      return node.flag === VNODE_TYPE.FRAGMENT;
+  }
+  function isVComponentNode(node) {
+      return node.flag === VNODE_TYPE.COMPONENT;
+  }
+  function isVAliveNode(node) {
+      return node.flag === VNODE_TYPE.ALIVE;
+  }
 
   let updating = false;
   const watcherTask = [];
@@ -238,13 +257,19 @@
   }
 
   class ComponentLifeCycle {
-      constructor() {
-          this.createdList = [];
-          this.beforeMountedList = [];
-          this.readyMountedList = [];
-          this.mountedList = [];
-          this.beforeUnMountedList = [];
-          this.unMountedList = [];
+      constructor(createdList = [], beforeMountedList = [], readyMountedList = [], mountedList = [], beforeUnMountedList = [], unMountedList = []) {
+          this.createdList = createdList;
+          this.beforeMountedList = beforeMountedList;
+          this.readyMountedList = readyMountedList;
+          this.mountedList = mountedList;
+          this.beforeUnMountedList = beforeUnMountedList;
+          this.unMountedList = unMountedList;
+          // this.createdList = []
+          // this.beforeMountedList = []
+          // this.readyMountedList = []
+          // this.mountedList = []
+          // this.beforeUnMountedList = []
+          // this.unMountedList = []
       }
       created(fn) {
           this.createdList.push(fn);
@@ -272,6 +297,7 @@
   function createClassComponentLife(component) {
       let lifeNames = ['created', 'beforeMounted', 'readyMounted', 'mounted', 'beforeUnMounted', 'unMounted'];
       let lifeCycle = new ComponentLifeCycle();
+      component.life = lifeCycle;
       lifeNames.forEach(lifeName => {
           let fn = component[lifeName];
           if (!fn)
@@ -280,6 +306,14 @@
       });
       return lifeCycle;
   }
+
+  // 给插件提供的能力
+  const appUtils = {
+      state,
+      defineState,
+      h: renderApi,
+      watch
+  };
 
   /**
    * 函数转化为activer转化为VAlive
@@ -438,7 +472,7 @@
       else {
           let FunctionComponent = component;
           let lifeCycle = new ComponentLifeCycle();
-          let vn = FunctionComponent(componentProps, children, lifeCycle);
+          let vn = FunctionComponent({ props: componentProps, children: children, life: lifeCycle, utils: appUtils });
           lifeCycle.emit('created');
           let vc = {
               type: VComponentSymbol,
@@ -470,7 +504,7 @@
           let newValue = this.activeProps.value;
           let oldValue = this.value;
           this.value = newValue;
-          let meta = { targetPropOldValue: this.depArr, targetPropnewValue: this.nextDepArr };
+          let meta = { targetPropOldValue: this.depArr, targetPropNewValue: this.nextDepArr };
           this.callback(oldValue, newValue, meta);
           this.depArr = (_a = this.nextDepArr) === null || _a === void 0 ? void 0 : _a.slice();
       }
@@ -491,20 +525,27 @@
   function watchVNode(activeVNode, callback) {
       let watcher = new Watcher(activeVNode.activer, function (oldValue, newValue, meta) {
           const oldVNode = oldValue;
-          const newVNode = createVNode(newValue);
+          const newVNode = createVNode(ifFunctionToString(newValue));
           // 对于数组节点后期需要记录它的响应式数组用于节点更新
-          if (oldVNode.flag === VNODE_TYPE.ARRAYNODE) {
+          if (isVArrayNode(oldVNode)) {
               oldVNode.depArray = meta === null || meta === void 0 ? void 0 : meta.targetPropOldValue;
           }
           // 对于数组节点后期需要记录它的响应式数组用于节点更新
-          if (newVNode.flag === VNODE_TYPE.ARRAYNODE) {
-              newVNode.depArray = meta === null || meta === void 0 ? void 0 : meta.targetPropnewValue;
+          if (isVArrayNode(newVNode)) {
+              newVNode.depArray = meta === null || meta === void 0 ? void 0 : meta.targetPropNewValue;
           }
           callback(oldVNode, newVNode);
           watcher.value = newVNode;
           activeVNode.vnode = newVNode;
       });
-      return watcher.value = createVNode(watcher.value);
+      return watcher.value = createVNode(ifFunctionToString(watcher.value));
+  }
+  function ifFunctionToString(value) {
+      if (isFunction(value)) {
+          console.warn('你确定要返回一个函数到页面？');
+          return String(value);
+      }
+      return value;
   }
   /**
    * 监控可变dom的prop
@@ -738,70 +779,72 @@
       }
   }
 
-  function mount(vnode, container, anchor, app) {
-      switch (vnode.flag) {
-          case VNODE_TYPE.ELEMENT:
-              mountElement(vnode, container, anchor, app);
-              break;
-          case VNODE_TYPE.TEXT:
-              mountText(vnode, container, anchor);
-              break;
-          case VNODE_TYPE.FRAGMENT:
-              mountFragment(vnode, container, anchor, app);
-              break;
-          case VNODE_TYPE.ARRAYNODE:
-              mountArrayNode(vnode, container, anchor, app);
-              break;
-          case VNODE_TYPE.COMPONENT:
-              mountComponent(vnode, container, anchor, app);
-              break;
-          case VNODE_TYPE.ALIVE:
-              mountAlive(vnode, container, anchor, app);
-              break;
+  function mount(vNode, container, anchor, app) {
+      if (isVElementNode(vNode)) {
+          mountElement(vNode, container, anchor, app);
+      }
+      else if (isVTextNode(vNode)) {
+          mountText(vNode, container, anchor);
+      }
+      else if (isVFragmentNode(vNode)) {
+          mountFragment(vNode, container, anchor, app);
+      }
+      else if (isVArrayNode(vNode)) {
+          mountArrayNode(vNode, container, anchor, app);
+      }
+      else if (isVComponentNode(vNode)) {
+          mountComponent(vNode, container, anchor, app);
+      }
+      else if (isVAliveNode(vNode)) {
+          mountAlive(vNode, container, anchor, app);
+      }
+      else {
+          throw '传入的节点不合法！';
       }
   }
-  function unmount(vnode, container) {
-      switch (vnode.flag) {
-          case VNODE_TYPE.ELEMENT:
-              unmountElement(vnode);
-              break;
-          case VNODE_TYPE.TEXT:
-              unmountText(vnode);
-              break;
-          case VNODE_TYPE.FRAGMENT:
-              unmountFragment(vnode);
-              break;
-          case VNODE_TYPE.ARRAYNODE:
-              unmountArrayNode(vnode);
-              break;
-          case VNODE_TYPE.COMPONENT:
-              unmountComponent(vnode);
-              break;
+  function unmount(vNode, container) {
+      if (isVElementNode(vNode)) {
+          unmountElement(vNode);
+      }
+      else if (isVTextNode(vNode)) {
+          unmountText(vNode);
+      }
+      else if (isVFragmentNode(vNode)) {
+          unmountFragment(vNode);
+      }
+      else if (isVArrayNode(vNode)) {
+          unmountArrayNode(vNode);
+      }
+      else if (isVComponentNode(vNode)) {
+          unmountComponent(vNode);
+      }
+      else {
+          throw '传入的节点不合法！';
       }
   }
   function mountChildren(children, container, anchor, app) {
       children.forEach(child => mount(child, container, anchor, app));
   }
-  function mountText(vnode, container, anchor) {
-      const el = document.createTextNode(vnode.children);
-      vnode.el = el;
+  function mountText(vNode, container, anchor) {
+      const el = document.createTextNode(vNode.children);
+      vNode.el = el;
       container.insertBefore(el, anchor);
   }
-  function unmountText(vnode, container) {
-      vnode.el.remove();
+  function unmountText(vNode, container) {
+      vNode.el.remove();
   }
-  function mountFragment(vnode, container, anchor, app) {
+  function mountFragment(vNode, container, anchor, app) {
       const start = document.createTextNode('');
       const end = document.createTextNode('');
-      vnode.anchor = start;
-      vnode.el = end;
+      vNode.anchor = start;
+      vNode.el = end;
       container.insertBefore(start, anchor);
-      mountChildren(vnode.children, container, anchor, app);
+      mountChildren(vNode.children, container, anchor, app);
       container.insertBefore(end, anchor);
   }
-  function unmountFragment(vnode, container) {
-      const start = vnode.anchor;
-      const end = vnode.el;
+  function unmountFragment(vNode, container) {
+      const start = vNode.anchor;
+      const end = vNode.el;
       let cur = start;
       while (cur && cur !== end) {
           let next = cur.nextSibling;
@@ -810,18 +853,18 @@
       }
       end.remove();
   }
-  function mountArrayNode(vnode, container, anchor, app) {
+  function mountArrayNode(vNode, container, anchor, app) {
       const start = document.createTextNode('');
       const end = document.createTextNode('');
-      vnode.anchor = start;
-      vnode.el = end;
+      vNode.anchor = start;
+      vNode.el = end;
       container.insertBefore(start, anchor);
-      mountChildren(vnode.children, container, anchor, app);
+      mountChildren(vNode.children, container, anchor, app);
       container.insertBefore(end, anchor);
   }
-  function unmountArrayNode(vnode, container, anchor) {
-      const start = vnode.anchor;
-      const end = vnode.el;
+  function unmountArrayNode(vNode, container, anchor) {
+      const start = vNode.anchor;
+      const end = vNode.el;
       let cur = start;
       while (cur && cur !== end) {
           let next = cur.nextSibling;
@@ -841,40 +884,77 @@
       unmount(vNode.root);
       vNode.lifeStyleInstance.emit('unMounted');
   }
-  function mountAlive(vnode, container, anchor, app) {
-      let firstVNode = watchVNode(vnode, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app));
-      vnode.vnode = firstVNode;
+  function mountAlive(vNode, container, anchor, app) {
+      let firstVNode = watchVNode(vNode, (oldVNode, newVNode) => patch(oldVNode, newVNode, container, app));
+      vNode.vnode = firstVNode;
       mount(firstVNode, container, anchor, app);
   }
 
   class Component {
+      constructor() {
+          this.utils = appUtils;
+      }
+  }
+  function defineComponent(componentType) {
+      return componentType;
+  }
+
+  // 初始化所有虚拟dom的指令
+  function renderWithOrder(vNode, app) {
+      if (isVElementNode(vNode) ||
+          isVComponentNode(vNode) ||
+          isVFragmentNode(vNode) ||
+          isVArrayNode(vNode)) {
+          vNode.children.map(node => renderWithOrder(node, app));
+      }
+      if (isVElementNode(vNode) ||
+          isVComponentNode(vNode)) {
+          // 根据优先级排列
+          let orderList = Object.values(app.orderMap).sort((a, b) => b.priority - a.priority);
+          return orderList.reduce((pre, cur) => {
+              return createVNode(cur.handler(pre));
+          }, vNode);
+      }
+      return vNode;
+  }
+  function registerOrder(propName, handler, priority = 0) {
+      this.orderMap[propName] = {
+          handler, priority, propName
+      };
   }
 
   class App {
-      constructor(vnode, options) {
-          this.rootVNode = vnode;
+      constructor(vNode, options) {
+          this.rootVNode = vNode;
           this.options = options || {};
+          this.pluginList = [];
+          this.orderMap = {};
       }
       mount(selector) {
           if (selector) {
-              const el = document.querySelector(selector) || document.body;
-              mount(this.rootVNode, el, undefined, this);
+              const el = (isString(selector) ? document.querySelector(selector) : selector) || document.body;
+              mount(renderWithOrder(this.rootVNode, this), el, undefined, this);
           }
           else {
-              mount(this.rootVNode, document.body, undefined, this);
+              mount(renderWithOrder(this.rootVNode, this), document.body, undefined, this);
           }
           // let container = document.createElement('div')
-          // mount(this.rootVNode, container, undefined, this)
+          // runtime(this.rootVNode, container, undefined, this)
           // el?.replaceWith(...container.childNodes)
       }
       use(plugin) {
-          const utils = { state, defineState, h: render };
-          plugin.install(utils);
+          let index = this.pluginList.indexOf(plugin);
+          if (index > -1)
+              return this;
+          plugin.install({ utils: appUtils });
           return this;
       }
+      order(propName, handler, priority) {
+          registerOrder.call(this, propName, handler, priority);
+      }
   }
-  function createApp(vnode, options) {
-      return new App(vnode, options);
+  function createApp(vNode, options) {
+      return new App(vNode, options);
   }
 
   exports.Activer = Activer;
@@ -889,8 +969,10 @@
   exports.createApp = createApp;
   exports.createVNode = renderApi;
   exports["default"] = App;
+  exports.defineComponent = defineComponent;
   exports.defineState = defineState;
   exports.getActiver = getActiver;
+  exports.h = renderApi;
   exports.mount = mount;
   exports.reactive = reactive;
   exports.ref = ref;
