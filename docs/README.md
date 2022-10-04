@@ -33,9 +33,10 @@
         - [插槽](#插槽)
         - [具名插槽](#具名插槽)
       - [动态组件](#动态组件)
+  - [生命周期](#生命周期)
+  - [指令](#指令)
   - [结尾](#结尾)
     - [feture](#feture)
-
 ## 简介
 
 **vact**，从名字就能看出，和**vue**还有**react**是少不了关系的，它是一款基于**vue**的响应式原理，以及**react**的**jsx**语法，并结合我自身的创新开发而来。当然，仅凭我一个人是无法将它维护的很好的，所以，我想借助它来向大家展示一下我自己的想法以及一些有趣的用法，那么接下来，请听我娓娓道来。
@@ -99,7 +100,7 @@ createApp(app).mount('#app')
 
 `babel-plugin-syntax-jsx   `（**识别jsx语法**）
 
-`babel-plugin-transform-vact-jsx`（**翻译vact的babel**）
+`babel-plugin-transform-vactapp-jsx`（**翻译vact的babel**）
 
 
 
@@ -362,7 +363,7 @@ createApp(<App />, { arrayDiff: true }).mount('#app')
 事件都是以on开头，传入一个函数即可，但是事件可以作为props传入组件内部使用
 
 ```jsx
-function Input(props) {
+function Input({props}) {
   return <div>
     <input type="text" onInput={(e) => props.onChange(e.target.value)} />
   </div>
@@ -441,7 +442,7 @@ data.count2++
 ##### 函数组件
 
 ```jsx
-function Button(props, children) {
+function Button({props, children}) {
   return <><button onClick={props.onChange}>{props.text}</button></>
 }
 const text = state('哈哈哈')
@@ -475,7 +476,7 @@ class App {
 }
 ```
 
-你可以使用函数声明组件，返回需要渲染的html，同时属性和子元素会作为参数传入
+你可以使用函数声明组件，返回需要渲染的html，同时context对象(包含props和children)会作为参数传入
 
 
 
@@ -484,14 +485,14 @@ class App {
 组件属性如果是响应式的，那么它的响应性会传递到子组件，且你可以将props的值无限向下传递，仍然会保持它的响应
 
 ```jsx
-function Fun1(props) {
+function Fun1({props}) {
   return <div>
     fun1-value: {props.value}
     <Fun2 value={props.value}></Fun2>
   </div>
 }
 
-function Fun2(props) {
+function Fun2({props}) {
   return <>
     fun2-value: {props.value}
   </>
@@ -518,7 +519,7 @@ function App() {
 插槽将作为children传入
 
 ```jsx
-function Text(props, children) {
+function Text({props, children}) {
   return <>{children}</>
 }
 const show = state(true)
@@ -545,7 +546,7 @@ createApp(app).mount('#app')
 更推荐使用props实现
 
 ```jsx
-function Text(props, children) {
+function Text({props, children}) {
   const slots = props.slots
   return <>
     <div>**{slots.head}**</div>
@@ -577,7 +578,7 @@ createApp(app).mount('#app')
 在条件渲染中我们已经展示过了动态组件，简单来说，动态组件返回的是一个函数，在这个函数中我们需要引用响应式变量并返回html模板
 
 ```jsx
-function Fun(props) {
+function Fun({props}) {
   return function () {
     if (props.isHello) {
       return <span>hello</span>
@@ -606,7 +607,7 @@ function App() {
 我们甚至可以封装一下动态组件，就像vue中的component组件一样
 
 ```jsx
-function Component(props) {
+function Component({props}) {
   const components = props.components
   return function () {
     let Cur = components[props.is]
@@ -633,6 +634,22 @@ function App() {
 ![示例](./static/component.gif)
 
 怎么样，有意思吧，如果你觉得有趣，不妨写一个demo试试
+
+
+
+
+
+## 生命周期
+
+// todo
+
+
+
+## 指令
+
+// todo 测试中
+
+
 
 ## 结尾
 
