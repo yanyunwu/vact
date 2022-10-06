@@ -1,0 +1,16 @@
+{
+  "name": "vact-router",
+  "version": "0.1.0",
+  "description": "vact配套的router",
+  "main": "dist/boundle.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "keywords": [],
+  "author": "stuzhou",
+  "license": "MIT",
+  "devDependencies": {
+    "vactapp": "workspace:0.9.6-beta.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "babel-plugin-transform-vactapp-jsx",
+  "version": "0.2.0",
+  "main": "src/index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/cli": "^7.18.10",
+    "@babel/core": "^7.18.10",
+    "@babel/plugin-syntax-jsx": "^7.18.6",
+    "@babel/preset-react": "^7.18.6"
+  },
+  "scripts": {
+    "build": "babel test -d dist"
+  },
+  "dependencies": {}
+}

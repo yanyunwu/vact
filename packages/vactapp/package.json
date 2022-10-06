@@ -1,0 +1,24 @@
+{
+  "name": "vactapp",
+  "version": "0.9.6-beta.0",
+  "description": "一个简单的前端响应式新框架",
+  "main": "dist/boundle.js",
+  "types": "index.d.ts",
+  "keywords": [
+    "前端框架",
+    "响应式",
+    "响应式前端框架"
+  ],
+  "author": "烟云雾沧海",
+  "license": "MIT",
+  "repository": "https://github.com/yanyunwu/vact",
+  "files": [
+    "dist",
+    "src",
+    "index.d.ts",
+    "index.ts",
+    "../../LICENSE",
+    "package.json",
+    "README.md"
+  ]
+}
